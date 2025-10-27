@@ -11,18 +11,26 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.compose.rememberNavController
+import com.example.appmovilsiivmex.navigation.BarraNavegacionInferior
+import com.example.appmovilsiivmex.navigation.NavegacionAuto
 import com.example.appmovilsiivmex.ui.theme.AppMovilSIIVMEXTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
         setContent {
             AppMovilSIIVMEXTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
+                val controladorNavegacion = rememberNavController()
+
+                Scaffold(
+                    bottomBar = {
+                        BarraNavegacionInferior(controladorNavegacion)
+                    }
+                ) { paddingValues ->
+                    NavegacionAuto(
+                        controladorNavegacion = controladorNavegacion,
+                        paddingValues = paddingValues
                     )
                 }
             }
