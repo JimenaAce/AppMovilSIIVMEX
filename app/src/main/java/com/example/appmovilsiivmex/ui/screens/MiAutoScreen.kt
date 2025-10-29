@@ -2,7 +2,6 @@ package com.example.appmovilsiivmex.ui.screens
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -28,6 +27,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import com.example.appmovilsiivmex.R
 import com.example.appmovilsiivmex.ui.theme.ColorAzulOscuro
 import com.example.appmovilsiivmex.ui.theme.ColorChipInactivo
@@ -35,8 +35,9 @@ import com.example.appmovilsiivmex.ui.theme.ColorGrisTexto
 import com.example.appmovilsiivmex.ui.theme.ColorRosa
 
 @Composable
-fun MiAutoScreen() {
-
+fun MiAutoScreen(
+    navController: NavController
+) {
     val fondoApp = Color(0xFFFFFFFF)
 
     Column(
@@ -149,7 +150,10 @@ fun MiAutoScreen() {
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 IconButton(
-                    onClick = { /* TODO editar nombre/alias del auto */ },
+                    onClick = {
+                        // Navegar a la pantalla de edición
+                        navController.navigate("editar_vehiculo")
+                    },
                     modifier = Modifier.size(20.dp)
                 ) {
                     Icon(
