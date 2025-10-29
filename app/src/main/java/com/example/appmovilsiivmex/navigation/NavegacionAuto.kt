@@ -7,6 +7,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.appmovilsiivmex.ui.screens.HoyNoCirculaScreen
 import com.example.appmovilsiivmex.ui.screens.PantallaPlaceholder
+import com.example.appmovilsiivmex.ui.screens.InicioScreen
 
     @Composable
     fun NavegacionAuto(
@@ -18,7 +19,7 @@ import com.example.appmovilsiivmex.ui.screens.PantallaPlaceholder
             startDestination = "hoy_no_circula"
         ) {
             composable("hoy_no_circula") { HoyNoCirculaScreen() }
-            composable("inicio") { PantallaPlaceholder("Inicio") }
+            composable("inicio") { InicioScreen() }
             composable("multas") { PantallaPlaceholder("Multas") }
             composable("ubicacion") { PantallaPlaceholder("Ubicación") }
             composable("mi_auto") { PantallaPlaceholder("Mi auto") }
