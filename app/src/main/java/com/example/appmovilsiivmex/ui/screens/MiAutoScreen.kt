@@ -28,6 +28,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.compose.foundation.layout.statusBarsPadding
 import com.example.appmovilsiivmex.R
 import com.example.appmovilsiivmex.ui.theme.ColorAzulOscuro
 import com.example.appmovilsiivmex.ui.theme.ColorChipInactivo
@@ -39,11 +40,13 @@ fun MiAutoScreen(
     navController: NavController
 ) {
     val fondoApp = Color(0xFFFFFFFF)
+    val hayNotificaciones = true   // simulado por ahora
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(fondoApp)
+            .statusBarsPadding()
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 16.dp, vertical = 12.dp)
     ) {
@@ -92,12 +95,26 @@ fun MiAutoScreen(
             Spacer(modifier = Modifier.weight(1f))
 
             // Notificaciones
-            IconButton(onClick = { /* TODO notificaciones */ }) {
-                Icon(
-                    imageVector = Icons.Default.NotificationsNone,
-                    contentDescription = "Notificaciones",
-                    tint = ColorAzulOscuro
-                )
+            IconButton(onClick = {
+                navController.navigate("notificaciones")
+            }) {
+                Box {
+                    Icon(
+                        imageVector = Icons.Default.NotificationsNone,
+                        contentDescription = "Notificaciones",
+                        tint = ColorAzulOscuro
+                    )
+                    if (hayNotificaciones) {
+                        Box(
+                            modifier = Modifier
+                                .size(10.dp)
+                                .align(Alignment.TopEnd)
+                                .offset(x = 2.dp, y = (-2).dp)
+                                .clip(CircleShape)
+                                .background(Color(0xFF1A2E47))
+                        )
+                    }
+                }
             }
 
             // Avatar usuario

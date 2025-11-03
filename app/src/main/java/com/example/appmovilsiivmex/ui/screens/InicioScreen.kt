@@ -22,20 +22,27 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import androidx.compose.foundation.layout.statusBarsPadding
 import com.example.appmovilsiivmex.ui.theme.ColorAzulOscuro
 import com.example.appmovilsiivmex.ui.theme.ColorFondoTarjeta
 import com.example.appmovilsiivmex.ui.theme.ColorVerde
 
 @Composable
-fun InicioScreen() {
+fun InicioScreen(
+    navController: NavController
+) {
 
     // color de fondo general tipo "rosita muy clarito"
     val fondoApp = Color(0xFFFFFCFF)
+    // control de notis
+    val hayNotificaciones = true
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(fondoApp)
+            .statusBarsPadding()
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 16.dp, vertical = 12.dp)
     ) {
@@ -83,13 +90,29 @@ fun InicioScreen() {
 
             Spacer(modifier = Modifier.weight(1f))
 
-            // Campana
-            IconButton(onClick = { /* TODO notificaciones */ }) {
-                Icon(
-                    imageVector = Icons.Default.NotificationsNone,
-                    contentDescription = "Notificaciones",
-                    tint = ColorAzulOscuro
-                )
+            // Campana con badge y navegación
+            IconButton(
+                onClick = {
+                    navController.navigate("notificaciones")
+                }
+            ) {
+                Box {
+                    Icon(
+                        imageVector = Icons.Default.NotificationsNone,
+                        contentDescription = "Notificaciones",
+                        tint = ColorAzulOscuro
+                    )
+                    if (hayNotificaciones) {
+                        Box(
+                            modifier = Modifier
+                                .size(10.dp)
+                                .align(Alignment.TopEnd)
+                                .offset(x = 2.dp, y = (-2).dp)
+                                .clip(CircleShape)
+                                .background(Color(0xFF1A2E47))
+                        )
+                    }
+                }
             }
 
             // Avatar
@@ -227,14 +250,8 @@ fun InicioScreen() {
     }
 }
 
-
 /**
  * Tarjeta reusable para las cajitas tipo dashboard.
- *
- * Cambios importantes:
- *  - Alto fijo (~160.dp) en vez de llenar toda la pantalla
- *  - Contenido alineado hacia arriba, no space-between hasta abajo
- *  - Bordecito gris claro para que se parezcan más al figma
  */
 @Composable
 private fun InfoCard(
@@ -256,7 +273,6 @@ private fun InfoCard(
                 color = Color(0xFFE5E5E5),
                 shape = RoundedCornerShape(16.dp)
             )
-            .padding(0.dp) // padding interno lo metemos al Column
     ) {
         Column(
             modifier = Modifier
@@ -265,7 +281,6 @@ private fun InfoCard(
             horizontalAlignment = Alignment.Start,
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Título
             Text(
                 text = titulo,
                 color = ColorAzulOscuro,
@@ -273,7 +288,6 @@ private fun InfoCard(
                 fontWeight = FontWeight.Bold
             )
 
-            // Icono principal
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -283,7 +297,6 @@ private fun InfoCard(
                 icono()
             }
 
-            // Badge opcional
             if (badgeTexto != null && badgeColor != null) {
                 Surface(
                     color = badgeColor,
@@ -303,7 +316,6 @@ private fun InfoCard(
                 }
             }
 
-            // Descripción abajo
             Text(
                 text = descripcion,
                 color = ColorAzulOscuro.copy(alpha = 0.75f),

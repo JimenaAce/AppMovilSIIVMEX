@@ -9,6 +9,7 @@ import com.example.appmovilsiivmex.ui.screens.EditarVehiculoScreen
 import com.example.appmovilsiivmex.ui.screens.HoyNoCirculaScreen
 import com.example.appmovilsiivmex.ui.screens.InicioScreen
 import com.example.appmovilsiivmex.ui.screens.MiAutoScreen
+import com.example.appmovilsiivmex.ui.screens.NotificacionesScreen
 import com.example.appmovilsiivmex.ui.screens.PantallaPlaceholder
 
 @Composable
@@ -20,7 +21,9 @@ fun NavegacionAuto(
         navController = controladorNavegacion,
         startDestination = "hoy_no_circula"
     ) {
-        composable("inicio") { InicioScreen() }
+        composable("inicio") {
+            InicioScreen(navController = controladorNavegacion)
+        }
         composable("multas") { PantallaPlaceholder("Multas") }
         composable("ubicacion") { PantallaPlaceholder("Ubicación") }
 
@@ -45,5 +48,10 @@ fun NavegacionAuto(
         }
 
         composable("hoy_no_circula") { HoyNoCirculaScreen() }
+
+        composable("notificaciones") {
+            NotificacionesScreen(navController = controladorNavegacion)
+        }
+
     }
 }
