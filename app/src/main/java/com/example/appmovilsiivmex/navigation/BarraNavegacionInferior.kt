@@ -1,6 +1,7 @@
 package com.example.appmovilsiivmex.navigation
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Place
@@ -23,9 +24,11 @@ data class OpcionNavegacion(
 @Composable
 fun BarraNavegacionInferior(navController: NavController) {
     val opciones = listOf(
-        OpcionNavegacion("inicio", Icons.Default.Home, "Inicio"),
+        OpcionNavegacion("panel", Icons.Default.Home, "Panel"),
         OpcionNavegacion("multas", Icons.Default.ReceiptLong, "Multas"),
-        OpcionNavegacion("ubicacion", Icons.Default.Place, "Ubicación"),
+        OpcionNavegacion("mi_verificacion", Icons.Filled.DateRange, "Mi Verif."),
+        OpcionNavegacion("hoy_no_circula", Icons.Filled.DateRange, "Circul."),
+        OpcionNavegacion("ubicacion", Icons.Default.Place, "Ubic."),
         OpcionNavegacion("mi_auto", Icons.Default.DirectionsCar, "Mi auto")
     )
 
