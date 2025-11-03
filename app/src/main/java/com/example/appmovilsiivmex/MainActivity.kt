@@ -46,6 +46,7 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
     )
 }
 
+// Función para vista previa de una pantalla
 @Preview(showBackground = true)
 @Composable
 fun GreetingPreview() {

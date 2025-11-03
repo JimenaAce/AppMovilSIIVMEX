@@ -5,12 +5,18 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.example.appmovilsiivmex.ui.screens.EditarVehiculoScreen
+import com.example.appmovilsiivmex.ui.screens.CalendarioHoyNoCirculaScreen
+import com.example.appmovilsiivmex.ui.screens.CalendarioVerificacionScreen
 import com.example.appmovilsiivmex.ui.screens.HoyNoCirculaScreen
+import com.example.appmovilsiivmex.ui.screens.MisVehiculosScreen
+import com.example.appmovilsiivmex.ui.screens.PanelScreen
+import com.example.appmovilsiivmex.ui.screens.PantallaPlaceholder
+
+// mis pantallas nuevas
 import com.example.appmovilsiivmex.ui.screens.InicioScreen
 import com.example.appmovilsiivmex.ui.screens.MiAutoScreen
+import com.example.appmovilsiivmex.ui.screens.EditarVehiculoScreen
 import com.example.appmovilsiivmex.ui.screens.NotificacionesScreen
-import com.example.appmovilsiivmex.ui.screens.PantallaPlaceholder
 
 @Composable
 fun NavegacionAuto(
@@ -19,20 +25,53 @@ fun NavegacionAuto(
 ) {
     NavHost(
         navController = controladorNavegacion,
-        startDestination = "hoy_no_circula"
+        // dejamos el que traía el main para no romper el flujo original
+        startDestination = "mis_vehiculos"
     ) {
-        composable("inicio") {
-            InicioScreen(navController = controladorNavegacion)
-        }
-        composable("multas") { PantallaPlaceholder("Multas") }
-        composable("ubicacion") { PantallaPlaceholder("Ubicación") }
 
+        // ─────────────────────
+        // MENÚ LATERAL (venían del main)
+        // ─────────────────────
+        composable("mis_vehiculos") {
+            MisVehiculosScreen(controladorNavegacion)
+        }
+        composable("cal_verificacion") {
+            CalendarioVerificacionScreen(controladorNavegacion)
+        }
+        composable("cal_hoy_no_circula") {
+            CalendarioHoyNoCirculaScreen(controladorNavegacion)
+        }
+
+        // ─────────────────────
+        // BOTTOM / PANEL (venía del main)
+        // ─────────────────────
+        composable("panel") {
+            PanelScreen(controladorNavegacion)
+        }
+        composable("multas") {
+            PantallaPlaceholder("Multas")
+        }
+        composable("mi_verificacion") {
+            PantallaPlaceholder("Verificación")
+        }
+        composable("hoy_no_circula") {
+            HoyNoCirculaScreen()
+        }
+        composable("ubicacion") {
+            PantallaPlaceholder("Ubicación")
+        }
+
+        // ─────────────────────
+        // RUTAS QUE EN MAIN ERAN PLACEHOLDER
+        // PERO YA TENEMOS PANTALLA REAL
+        // ─────────────────────
         composable("mi_auto") {
+            // aquí usamos la pantalla real
             MiAutoScreen(navController = controladorNavegacion)
         }
 
-        // nueva ruta de edición
         composable("editar_vehiculo") {
+            // también usamos la real, no el placeholder
             EditarVehiculoScreen(
                 navController = controladorNavegacion,
                 placaInicial = "NVW1118",
@@ -40,18 +79,28 @@ fun NavegacionAuto(
                 nombreInicial = "Vehículo",
                 anioInicial = "2019",
                 hologramaInicial = "0",
-                onSave = { nuevaPlaca, nuevaMarca, nuevoNombre, nuevoAnio, nuevoHolo ->
-                    // Aquí es donde se guardaría en BD...
-                    // Por ahora solo estamos simulando guardado...
+                onSave = { _, _, _, _, _ ->
+                    // aquí luego guardamos en BD
                 }
             )
         }
 
-        composable("hoy_no_circula") { HoyNoCirculaScreen() }
+        // ─────────────────────
+        // MIS RUTAS NUEVAS
+        // ─────────────────────
+        composable("inicio") {
+            InicioScreen(navController = controladorNavegacion)
+        }
 
         composable("notificaciones") {
             NotificacionesScreen(navController = controladorNavegacion)
         }
 
+        // ─────────────────────
+        // RUTA EXTRA DEL MAIN
+        // ─────────────────────
+        composable("agregar_vehiculo") {
+            PantallaPlaceholder("Agregar vehículo")
+        }
     }
 }
