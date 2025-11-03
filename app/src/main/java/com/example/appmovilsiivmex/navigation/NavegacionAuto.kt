@@ -14,9 +14,10 @@ import com.example.appmovilsiivmex.ui.screens.PantallaPlaceholder
 
 // mis pantallas nuevas
 import com.example.appmovilsiivmex.ui.screens.InicioScreen
-import com.example.appmovilsiivmex.ui.screens.MiAutoScreen
 import com.example.appmovilsiivmex.ui.screens.EditarVehiculoScreen
-import com.example.appmovilsiivmex.ui.screens.NotificacionesScreen
+import com.example.appmovilsiivmex.ui.screens.MiAutoConDrawerScreen
+import com.example.appmovilsiivmex.ui.screens.MultasconDrawerScreen
+import com.example.appmovilsiivmex.ui.screens.NotificacionesconDrawerScreen
 
 @Composable
 fun NavegacionAuto(
@@ -49,8 +50,9 @@ fun NavegacionAuto(
             PanelScreen(controladorNavegacion)
         }
         composable("multas") {
-            PantallaPlaceholder("Multas")
+            MultasconDrawerScreen(navController = controladorNavegacion)
         }
+
         composable("mi_verificacion") {
             PantallaPlaceholder("Verificación")
         }
@@ -66,12 +68,11 @@ fun NavegacionAuto(
         // PERO YA TENEMOS PANTALLA REAL
         // ─────────────────────
         composable("mi_auto") {
-            // aquí usamos la pantalla real
-            MiAutoScreen(navController = controladorNavegacion)
+            MiAutoConDrawerScreen(navController = controladorNavegacion)
         }
 
+
         composable("editar_vehiculo") {
-            // también usamos la real, no el placeholder
             EditarVehiculoScreen(
                 navController = controladorNavegacion,
                 placaInicial = "NVW1118",
@@ -93,7 +94,7 @@ fun NavegacionAuto(
         }
 
         composable("notificaciones") {
-            NotificacionesScreen(navController = controladorNavegacion)
+            NotificacionesconDrawerScreen(navController = controladorNavegacion)
         }
 
         // ─────────────────────

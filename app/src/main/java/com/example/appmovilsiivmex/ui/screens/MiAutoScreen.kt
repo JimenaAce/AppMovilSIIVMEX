@@ -37,7 +37,8 @@ import com.example.appmovilsiivmex.ui.theme.ColorRosa
 
 @Composable
 fun MiAutoScreen(
-    navController: NavController
+    navController: NavController,
+    onMenuClick: () -> Unit = {}
 ) {
     val fondoApp = Color(0xFFFFFFFF)
     val hayNotificaciones = true   // simulado por ahora
@@ -59,7 +60,7 @@ fun MiAutoScreen(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             // Menú hamburguesa
-            IconButton(onClick = { /* TODO menú lateral */ }) {
+            IconButton(onClick = onMenuClick) {
                 Icon(
                     imageVector = Icons.Default.Menu,
                     contentDescription = "Menú",

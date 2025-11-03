@@ -17,16 +17,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.navigation.NavController
 import com.example.appmovilsiivmex.ui.theme.ColorAzulOscuro
 
 @Composable
 fun NotificacionesScreen(
-    navController: NavController
+    navController: NavController,
+    onMenuClick: () -> Unit = {}
 ) {
     val fondoApp = Color(0xFFFFFFFF)
 
@@ -43,7 +44,8 @@ fun NotificacionesScreen(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            IconButton(onClick = { /* menú lateral */ }) {
+            // hamburguesa que viene de afuera
+            IconButton(onClick = onMenuClick) {
                 Icon(
                     imageVector = Icons.Default.Menu,
                     contentDescription = "Menú",
@@ -123,15 +125,15 @@ fun NotificacionesScreen(
         )
         Spacer(modifier = Modifier.height(12.dp))
         NotificacionItem(
-            titulo = "Hoy no circula",
-            descripcion = "No circulas hoy",
+            titulo = "Refrendo",
+            descripcion = "Tu refrendo vence en 3 días",
             fecha = "22/04/2025"
         )
         Spacer(modifier = Modifier.height(12.dp))
         NotificacionItem(
-            titulo = "Hoy no circula",
-            descripcion = "No circulas hoy",
-            fecha = "22/04/2025"
+            titulo = "Verificación",
+            descripcion = "Recuerda verificar en agosto",
+            fecha = "20/04/2025"
         )
         Spacer(modifier = Modifier.height(80.dp))
     }

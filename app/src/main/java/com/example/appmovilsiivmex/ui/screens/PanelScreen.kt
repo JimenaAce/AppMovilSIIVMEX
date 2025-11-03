@@ -16,7 +16,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavController
 import com.example.appmovilsiivmex.navigation.MenuHamburguesa
@@ -24,7 +23,7 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PanelScreen (navController: NavController) {
+fun PanelScreen(navController: NavController) {
     val estadoDrawer = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
@@ -35,10 +34,11 @@ fun PanelScreen (navController: NavController) {
                 onOpcionSeleccionada = { ruta ->
                     navController.navigate(ruta)
                 },
-                onCerrarSesion = { /* Acción de cerrar sesión */ }
+                onCerrarSesion = { /* TODO cerrar sesión */ }
             )
         }
     ) {
+        // dejo el scaffold
         Scaffold(
             topBar = {
                 SmallTopAppBar(
@@ -47,19 +47,22 @@ fun PanelScreen (navController: NavController) {
                         IconButton(onClick = {
                             scope.launch { estadoDrawer.open() }
                         }) {
-                            Icon(Icons.Default.Menu, contentDescription = "Abrir menú")
+                            Icon(
+                                imageVector = Icons.Default.Menu,
+                                contentDescription = "Abrir menú"
+                            )
                         }
                     }
                 )
             }
         ) { padding ->
+            // Aquí meto mi pantalla de inicio
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(padding),
-                contentAlignment = Alignment.Center
+                    .padding(padding)
             ) {
-                Text("Resumen del vehículo (y puede elegir otro)")
+                InicioScreen(navController = navController)
             }
         }
     }

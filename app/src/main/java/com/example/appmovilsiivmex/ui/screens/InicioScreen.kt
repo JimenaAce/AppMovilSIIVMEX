@@ -54,14 +54,6 @@ fun InicioScreen(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            // Ícono hamburguesa
-            IconButton(onClick = { /* TODO menú lateral */ }) {
-                Icon(
-                    imageVector = Icons.Default.Menu,
-                    contentDescription = "Menú",
-                    tint = ColorAzulOscuro
-                )
-            }
 
             // Selector de placa
             Surface(
