@@ -71,7 +71,7 @@ fun NavegacionAuto(
                     }
                 },
                 onContinue = {
-                    controladorNavegacion.navigate("agregar_vehiculo"){
+                    controladorNavegacion.navigate("registro_vehiculo"){
                         popUpTo("registro") { inclusive = true }
                     }
                 }
@@ -80,17 +80,17 @@ fun NavegacionAuto(
         // ─────────────────────
         // AGREGAR VEHÍCULO
         // ─────────────────────
-        composable("agregar_vehiculo"){
+        composable("registro_vehiculo"){
             VehicleAddScreen(
                 onBack = {
                     controladorNavegacion.navigate("registro"){
-                        popUpTo("agregar_vehiculo"){ inclusive = true }
+                        popUpTo("registro_vehiculo"){ inclusive = true }
                     }
                 },
                 onSubmit = {
                     // Lógica de registro, de momento se regresará al inicio de sesión
                     controladorNavegacion.navigate("inicio_sesion"){
-                        popUpTo("agregar_vehiculo") { inclusive = true }
+                        popUpTo("registro_vehiculo") { inclusive = true }
                     }
                 }
             )

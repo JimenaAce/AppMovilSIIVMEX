@@ -27,7 +27,7 @@ class MainActivity : ComponentActivity() {
                 val rutaActual = backStackEntry.value?.destination?.route
 
                 // Lista de rutas sin barra de navegación inferior
-                val rutasSinBarraInferior = listOf("inicio_sesion", "registro", "agregar_vehiculo", "restablecer_contrasenia", "codigo_verificacion", "nueva_contrasenia","contrasenia_reestablecida")
+                val rutasSinBarraInferior = listOf("inicio_sesion", "registro", "registro_vehiculo", "restablecer_contrasenia", "codigo_verificacion", "nueva_contrasenia","contrasenia_reestablecida")
 
                 Scaffold(
                     bottomBar = {
@@ -54,7 +54,6 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
 }
 
 // Función para vista previa de una pantalla
-@Preview(showBackground = true)
 @Composable
 fun GreetingPreview() {
     AppMovilSIIVMEXTheme {
