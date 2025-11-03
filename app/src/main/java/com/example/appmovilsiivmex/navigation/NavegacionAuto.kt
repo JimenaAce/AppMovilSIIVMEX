@@ -18,6 +18,13 @@ import com.example.appmovilsiivmex.ui.screens.EditarVehiculoScreen
 import com.example.appmovilsiivmex.ui.screens.MiAutoConDrawerScreen
 import com.example.appmovilsiivmex.ui.screens.MultasconDrawerScreen
 import com.example.appmovilsiivmex.ui.screens.NotificacionesconDrawerScreen
+import com.example.appmovilsiivmex.ui.screens.forgotpassword.ForgotPasswordScreen
+import com.example.appmovilsiivmex.ui.screens.login.LoginScreen
+import com.example.appmovilsiivmex.ui.screens.newpassword.CreateNewPasswordScreen
+import com.example.appmovilsiivmex.ui.screens.passwordreset.PasswordResetSuccessScreen
+import com.example.appmovilsiivmex.ui.screens.register.RegisterScreen
+import com.example.appmovilsiivmex.ui.screens.vehicle.VehicleAddScreen
+import com.example.appmovilsiivmex.ui.screens.verifycode.VerifyCodeScreen
 
 @Composable
 fun NavegacionAuto(
@@ -27,8 +34,132 @@ fun NavegacionAuto(
     NavHost(
         navController = controladorNavegacion,
         // dejamos el que traía el main para no romper el flujo original
-        startDestination = "mis_vehiculos"
+        startDestination = "inicio_sesion"
     ) {
+
+        // ─────────────────────
+        // INICIO DE SESIÓN
+        // ─────────────────────
+        composable("inicio_sesion") {
+            LoginScreen(
+                onLoginSuccess = {
+                    controladorNavegacion.navigate("mis_vehiculos") {
+                        popUpTo("inicio_sesion") { inclusive = true }
+                    }
+                },
+                onRegisterClick = {
+                    controladorNavegacion.navigate("registro"){
+                        popUpTo("inicio_sesion"){ inclusive = true }
+                    }
+                },
+                onLinkClick = {
+                    controladorNavegacion.navigate("restablecer_contrasenia"){
+                        popUpTo("inicio_sesion"){ inclusive = true }
+                    }
+                }
+            )
+        }
+
+        // ─────────────────────
+        // REGISTRO
+        // ─────────────────────
+        composable("registro") {
+            RegisterScreen(
+                onGoToLogin = {
+                    controladorNavegacion.navigate("inicio_sesion"){
+                        popUpTo("registro"){ inclusive = true }
+                    }
+                },
+                onContinue = {
+                    controladorNavegacion.navigate("agregar_vehiculo"){
+                        popUpTo("registro") { inclusive = true }
+                    }
+                }
+            )
+        }
+        // ─────────────────────
+        // AGREGAR VEHÍCULO
+        // ─────────────────────
+        composable("agregar_vehiculo"){
+            VehicleAddScreen(
+                onBack = {
+                    controladorNavegacion.navigate("registro"){
+                        popUpTo("agregar_vehiculo"){ inclusive = true }
+                    }
+                },
+                onSubmit = {
+                    // Lógica de registro, de momento se regresará al inicio de sesión
+                    controladorNavegacion.navigate("inicio_sesion"){
+                        popUpTo("agregar_vehiculo") { inclusive = true }
+                    }
+                }
+            )
+        }
+        // ─────────────────────
+        // RESTABLECER CONTRASEÑA
+        // ─────────────────────
+        composable("restablecer_contrasenia"){
+            ForgotPasswordScreen(
+                onBack = {
+                    controladorNavegacion.navigate("inicio_sesion"){
+                        popUpTo("restablecer_contrasenia"){ inclusive = true }
+                    }
+                },
+                onSent = {
+                    // Agregar demás lógica para la base de datos
+                    controladorNavegacion.navigate("codigo_verificacion"){
+                        popUpTo("restablecer_contrasenia"){ inclusive = true }
+                    }
+                }
+            )
+        }
+        // ─────────────────────
+        // CÓDIGO DE VERIFICACIÓN
+        // ─────────────────────
+        composable("codigo_verificacion"){
+            VerifyCodeScreen(
+                onBack = {
+                    controladorNavegacion.navigate("restablecer_contrasenia"){
+                        popUpTo("codigo_verificacion"){ inclusive = true }
+                    }
+                },
+                onVerified = {
+                    // Agregar la lógica de envio de correo así como el envio de la base de datos
+                    controladorNavegacion.navigate("nueva_contrasenia"){
+                        popUpTo("codigo_verificacion"){ inclusive = true }
+                    }
+                }
+            )
+        }
+        // ─────────────────────
+        // NUEVA CONTRASENIA
+        // ─────────────────────
+        composable("nueva_contrasenia"){
+            CreateNewPasswordScreen(
+                onBack = {
+                    controladorNavegacion.navigate("codigo_verificacion"){
+                        popUpTo("nueva_contrasenia"){ inclusive = true }
+                    }
+                },
+                onSubmitSuccess = {
+                    controladorNavegacion.navigate("contrasenia_reestablecida"){
+                        popUpTo("nueva_contrasenia"){ inclusive = true }
+                    }
+                }
+            )
+        }
+        // ─────────────────────
+        // NUEVA CONTRASENIA
+        // ─────────────────────
+        composable("contrasenia_reestablecida"){
+            PasswordResetSuccessScreen (
+                onGoToLogin = {
+                    controladorNavegacion.navigate("inicio_sesion"){
+                        popUpTo("contrasenia_reestablecida"){ inclusive = true }
+                    }
+                }
+            )
+        }
 
         // ─────────────────────
         // MENÚ LATERAL (venían del main)
