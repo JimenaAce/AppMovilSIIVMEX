@@ -33,6 +33,11 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.appmovilsiivmex.navigation.MenuHamburguesa
 import com.example.appmovilsiivmex.ui.theme.ColorAzulOscuro
+import com.example.appmovilsiivmex.ui.theme.EngomadoAmarillo
+import com.example.appmovilsiivmex.ui.theme.EngomadoAzul
+import com.example.appmovilsiivmex.ui.theme.EngomadoRojo
+import com.example.appmovilsiivmex.ui.theme.EngomadoRosa
+import com.example.appmovilsiivmex.ui.theme.EngomadoVerde
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -131,11 +136,11 @@ fun CalendarioHoyNoCirculaScreen (navController: NavController) {
 @Composable
 fun ColumnaHoyNoCircula() {
     val filas = listOf(
-        Triple("5 y 6", Color(0xFFFFF176), "Lunes"),        // Amarillo
-        Triple("7 y 8", Color(0xFFF48FB1), "Martes"),       // Rosa
-        Triple("3 y 4", Color(0xFFE57373), "Miércoles"),    // Rojo
-        Triple("1 y 2", Color(0xFF81C784), "Jueves"),       // Verde
-        Triple("9 y 0", Color(0xFF64B5F6), "Viernes")       // Azul
+        Triple("5 y 6", EngomadoAmarillo, "Lunes"),        // Amarillo
+        Triple("7 y 8", EngomadoRosa, "Martes"),       // Rosa
+        Triple("3 y 4", EngomadoRojo, "Miércoles"),    // Rojo
+        Triple("1 y 2", EngomadoVerde, "Jueves"),       // Verde
+        Triple("9 y 0", EngomadoAzul, "Viernes")       // Azul
     )
 
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
