@@ -3,9 +3,11 @@ package com.example.appmovilsiivmex.ui.screens.login
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
@@ -16,10 +18,15 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -42,23 +49,22 @@ fun LoginScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
-    // Navegar cuando el login sea exitoso
     LaunchedEffect(uiState.loginSuccess) {
-        if (uiState.loginSuccess) {
-            onLoginSuccess()
-        }
+        if (uiState.loginSuccess) onLoginSuccess()
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .imePadding()
+    ) {
         Column(
             modifier = Modifier
                 .background(Color.White)
                 .fillMaxSize()
-                .padding(8.dp)
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-
             Spacer(Modifier.height(15.dp))
             LoginIllustration(resId = R.drawable.login_illustration)
             Spacer(Modifier.height(32.dp))
@@ -69,7 +75,7 @@ fun LoginScreen(
                 value = uiState.email,
                 onValueChange = viewModel::onEmailChange,
                 error = uiState.emailError,
-                enabled = !uiState.isLoading
+                enabled = !uiState.isLoading,
             )
 
             Spacer(Modifier.height(16.dp))
@@ -80,7 +86,10 @@ fun LoginScreen(
                 visible = uiState.showPassword,
                 onToggleVisibility = viewModel::onTogglePasswordVisibility,
                 error = uiState.passwordError,
-                enabled = !uiState.isLoading
+                enabled = !uiState.isLoading,
+                onImeDone = {
+                    viewModel.onLoginClick()
+                }
             )
 
             Spacer(Modifier.height(8.dp))
@@ -95,45 +104,23 @@ fun LoginScreen(
             Spacer(Modifier.height(8.dp))
             RegisterRow(onRegisterClick = onRegisterClick)
         }
-
-        // Mostrar error si existe
-        uiState.loginError?.let { error ->
-            Snackbar(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(16.dp),
-                action = {
-                    TextButton(onClick = viewModel::clearError) {
-                        Text("OK")
-                    }
-                }
-            ) {
-                Text(error)
-            }
-        }
     }
 }
 
-// Sub-composables actualizados
 @Composable
 private fun EmailField(
     value: String,
     onValueChange: (String) -> Unit,
     error: String?,
-    enabled: Boolean
+    enabled: Boolean,
+    modifier: Modifier = Modifier,
 ) {
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
         label = { Text("Correo electrónico") },
-        leadingIcon = {
-            Icon(
-                Icons.Outlined.Email,
-                null,
-                tint = ColorGris
-            )
-                      },
-        modifier = Modifier.fillMaxWidth(),
+        leadingIcon = { Icon(Icons.Outlined.Email, null, tint = ColorGris) },
+        modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         colors = OutlinedTextFieldDefaults.colors(
             focusedBorderColor = ColorAzulOscuro,
@@ -141,7 +128,11 @@ private fun EmailField(
             focusedTextColor = ColorAzulOscuro,
             unfocusedTextColor = ColorGris
         ),
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+        keyboardOptions = KeyboardOptions(
+            keyboardType = KeyboardType.Email,
+            imeAction = ImeAction.Next
+        ),
+
         singleLine = true,
         enabled = enabled,
         isError = error != null,
@@ -156,17 +147,17 @@ private fun PasswordField(
     visible: Boolean,
     onToggleVisibility: () -> Unit,
     error: String?,
-    enabled: Boolean
+    enabled: Boolean,
+    modifier: Modifier = Modifier,
+    onImeDone: () -> Unit = {}
 ) {
+    val focusManager = LocalFocusManager.current
+
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
         label = { Text("Contraseña") },
-        leadingIcon = {
-            Icon(
-                Icons.Outlined.Lock,
-                null,
-                tint = ColorGris) },
+        leadingIcon = { Icon(Icons.Outlined.Lock, null, tint = ColorGris) },
         trailingIcon = {
             IconButton(onClick = onToggleVisibility) {
                 Icon(
@@ -177,7 +168,7 @@ private fun PasswordField(
             }
         },
         visualTransformation = if (visible) VisualTransformation.None else PasswordVisualTransformation(),
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         colors = OutlinedTextFieldDefaults.colors(
             focusedBorderColor = ColorAzulOscuro,
@@ -185,7 +176,16 @@ private fun PasswordField(
             focusedTextColor = ColorAzulOscuro,
             unfocusedTextColor = ColorGris
         ),
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+        keyboardOptions = KeyboardOptions(
+            keyboardType = KeyboardType.Password,
+            imeAction = ImeAction.Done
+        ),
+        keyboardActions = KeyboardActions(
+            onDone = {
+                focusManager.clearFocus()
+                onImeDone()
+            }
+        ),
         singleLine = true,
         enabled = enabled,
         isError = error != null,

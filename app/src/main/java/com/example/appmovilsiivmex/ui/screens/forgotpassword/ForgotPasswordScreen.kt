@@ -72,13 +72,12 @@ fun ForgotPasswordScreen(
     }
 }
 
-/* =================== SUB-COMPONENTES =================== */
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ForgotTopBar(onBack: () -> Unit) {
     TopAppBar(
-        title = {}, // o CenterAlignedTopAppBar si quieres título centrado
+        title = {},
         navigationIcon = {
             IconButton(onClick = onBack) {
                 Icon(

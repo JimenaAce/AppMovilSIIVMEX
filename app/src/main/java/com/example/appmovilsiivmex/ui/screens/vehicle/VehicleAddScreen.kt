@@ -1,9 +1,13 @@
 package com.example.appmovilsiivmex.ui.screens.vehicle
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -18,9 +22,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
@@ -35,7 +42,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.appmovilsiivmex.R
 import com.example.appmovilsiivmex.ui.theme.ColorAzulOscuro
 import com.example.appmovilsiivmex.ui.theme.ColorGris
+import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Preview(showBackground = true)
 @Composable
 fun VehicleAddScreen(
@@ -44,113 +53,169 @@ fun VehicleAddScreen(
     onSubmit: (VehicleUiState) -> Unit = {}
 ) {
     val ui by viewModel.uiState.collectAsState()
-    val focus = LocalFocusManager.current
+    val kb = LocalSoftwareKeyboardController.current
 
-    Column(
-        modifier = Modifier
-            .background(Color.White)
-            .fillMaxSize()
-    ) {
-        // Flecha de back manual
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.Start
-        ) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
-                contentDescription = "Volver",
-                tint = ColorAzulOscuro,
-                modifier = Modifier
-                    .size(40.dp)
-                    .clickable { onBack() }
-                    .padding(8.dp)
+    val listState = rememberLazyListState()
+    val bringIntoViewRequester = remember { BringIntoViewRequester() }
+    val focusManager = LocalFocusManager.current
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("") },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Volver")
+                    }
+                }
             )
+        },
+        bottomBar = {
+            Surface {
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .navigationBarsPadding()
+                        .padding(16.dp)
+                ) {
+                    PrimaryButton(
+                        text = "Registrar",
+                        isLoading = ui.isLoading,
+                        onClick = {
+                            focusManager.clearFocus()
+                            kb?.hide()
+                            viewModel.submit(onSuccess = { onSubmit(ui) })
+                        }
+                    )
+                }
+            }
         }
-
-        // Resto del contenido con scroll
-        Column(
+    ) { inner ->
+        LazyColumn(
+            state = listState,
             modifier = Modifier
                 .fillMaxSize()
+                .imePadding()
+                .padding(inner)
                 .padding(horizontal = 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+            contentPadding = PaddingValues(bottom = 24.dp)
         ) {
-            Illustration(resId = R.drawable.addvehicle_illustration)
-            Spacer(Modifier.height(16.dp))
-
-            TitleAndSubtitle(
-                title = "Agregar Vehículo",
-                subtitle = "Por favor agrega la información antes de continuar"
-            )
-
-            // ... resto de tu contenido igual
-            Spacer(Modifier.height(16.dp))
-
-            PlateInput(
-                value = ui.plate,
-                onValueChange = viewModel::onPlateChange,
-                placeholder = "Placa",
-                imeAction = ImeAction.Next
-            )
-
-            Spacer(Modifier.height(12.dp))
-
-            FilledInput(
-                value = ui.nickname,
-                onValueChange = viewModel::onNicknameChange,
-                placeholder = "Nombre para su vehículo",
-                leading = { Icon(Icons.Outlined.DriveFileRenameOutline, null, tint = ColorGris) },
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-            )
-
-            Spacer(Modifier.height(12.dp))
-
-            FilledInput(
-                value = ui.year,
-                onValueChange = viewModel::onYearChange,
-                placeholder = "Año",
-                leading = { Icon(Icons.Outlined.CalendarMonth, null, tint = ColorGris) },
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Number,
-                    imeAction = ImeAction.Next
+            item {
+                Illustration(resId = R.drawable.addvehicle_illustration)
+            }
+            item {
+                TitleAndSubtitle(
+                    title = "Datos del vehículo",
+                    subtitle = "Completa la información para continuar"
                 )
-            )
-
-            Spacer(Modifier.height(12.dp))
-
-            FilledInput(
-                value = ui.brand,
-                onValueChange = viewModel::onBrandChange,
-                placeholder = "Marca",
-                leading = { Icon(Icons.Outlined.DirectionsCar, null, tint = ColorGris) },
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                keyboardActions = KeyboardActions(onDone = { focus.clearFocus() })
-            )
-
-            Spacer(Modifier.height(18.dp))
-
-            Text("Holograma", color = ColorGris, fontSize = 14.sp, modifier = Modifier.fillMaxWidth())
-            Spacer(Modifier.height(8.dp))
-            HologramChips(
-                options = listOf("E", "00", "0", "1", "2"),
-                selected = ui.hologram,
-                onSelected = viewModel::onHologramChange
-            )
-
-            Spacer(Modifier.height(24.dp))
-
-            PrimaryButton(
-                text = "Registrar",
-                isLoading = ui.isLoading,
-                onClick = { viewModel.submit(onSuccess = { onSubmit(ui) }) }
-            )
-            Spacer(Modifier.height(24.dp))
+            }
+            item {
+                // Placa (con bringIntoView al enfocar)
+                FocusableWrapper(bringIntoViewRequester) {
+                    PlateInput(
+                        value = ui.plate,
+                        onValueChange = viewModel::onPlateChange,
+                        placeholder = "Placa",
+                        imeAction = ImeAction.Next
+                    )
+                }
+            }
+            item {
+                FilledInput(
+                    value = ui.nickname,
+                    onValueChange = viewModel::onNicknameChange,
+                    placeholder = "Nombre para su vehículo",
+                    leading = {
+                        Icon(
+                            Icons.Outlined.DriveFileRenameOutline,
+                            null,
+                            tint = ColorGris
+                        )
+                    },
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
+                )
+            }
+            item {
+                FilledInput(
+                    value = ui.year,
+                    onValueChange = viewModel::onYearChange,
+                    placeholder = "Año",
+                    leading = { Icon(Icons.Outlined.CalendarMonth, null, tint = ColorGris) },
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Number,
+                        imeAction = ImeAction.Next
+                    )
+                )
+            }
+            item {
+                FilledInput(
+                    value = ui.brand,
+                    onValueChange = viewModel::onBrandChange,
+                    placeholder = "Marca",
+                    leading = { Icon(Icons.Outlined.DirectionsCar, null, tint = ColorGris) },
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(onDone = {
+                        focusManager.clearFocus()
+                        kb?.hide()
+                    })
+                )
+            }
+            item {
+                Text(
+                    "Holograma",
+                    color = ColorGris,
+                    fontSize = 14.sp,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(Modifier.height(8.dp))
+                HologramChips(
+                    options = listOf("E", "00", "0", "1", "2"),
+                    selected = ui.hologram,
+                    onSelected = viewModel::onHologramChange
+                )
+            }
         }
     }
 }
 
-/* ---------- Subcomposables ---------- */
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun FocusableWrapper(
+    bringIntoViewRequester: BringIntoViewRequester,
+    content: @Composable () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .bringIntoViewRequester(bringIntoViewRequester)
+    ) {
+        var hasFocus by remember { mutableStateOf(false) }
+        Box(
+            Modifier.onGloballyPositioned { }
+        ) {
+            CompositionLocalProvider {
+                val scope = rememberCoroutineScope()
+                Box(
+                    Modifier.onFocusChanged { st ->
+                        if (st.isFocused && !hasFocus) {
+                            hasFocus = true
+                            scope.launch {
+                                kotlinx.coroutines.delay(120)
+                                bringIntoViewRequester.bringIntoView()
+                            }
+                        } else if (!st.isFocused) {
+                            hasFocus = false
+                        }
+                    }
+                ) {
+                    content()
+                }
+            }
+        }
+    }
+}
+
 @Composable
 private fun Illustration(resId: Int) {
     Image(
@@ -158,7 +223,7 @@ private fun Illustration(resId: Int) {
         contentDescription = null,
         modifier = Modifier
             .fillMaxWidth()
-            .aspectRatio(3.0f),
+            .aspectRatio(2.8f),
         contentScale = ContentScale.Fit
     )
 }
@@ -233,11 +298,11 @@ private fun PlateInput(
         value = tf,
         onValueChange = { new ->
             val cleaned = new.text.uppercase().filter { it.isLetterOrDigit() || it == '-' }
-            val limited = cleaned.take(8) // ej. "ABC-1234" o "ABC123"
+            val limited = cleaned.take(8)
             tf = new.copy(text = limited, selection = TextRange(limited.length))
             onValueChange(limited)
         },
-        label = {Text(placeholder)},
+        label = { Text(placeholder) },
         leadingIcon = { Icon(Icons.Outlined.Numbers, null, tint = ColorGris) },
         singleLine = true,
         keyboardOptions = KeyboardOptions(
@@ -266,7 +331,7 @@ private fun HologramChips(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .wrapContentWidth(Alignment.CenterHorizontally), // centra el grupo
+            .wrapContentWidth(Alignment.CenterHorizontally),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -294,7 +359,6 @@ private fun CircleChip(
         shape = CircleShape,
         shadowElevation = 0.dp,
         tonalElevation = 0.dp,
-        // sin border = sin contorno negro
         modifier = Modifier
             .size(42.dp)
             .clickable { onClick() }

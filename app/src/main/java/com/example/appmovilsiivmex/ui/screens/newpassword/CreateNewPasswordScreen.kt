@@ -32,11 +32,11 @@ import com.example.appmovilsiivmex.ui.theme.ColorGris
 @Preview(showBackground = true)
 @Composable
 fun CreateNewPasswordScreen(
-    vm: CreateNewPasswordViewModel = viewModel(),
+    viewModel: CreateNewPasswordViewModel = viewModel(),
     onBack: () -> Unit = {},
     onSubmitSuccess: () -> Unit = {}
 ) {
-    val ui by vm.uiState.collectAsState()
+    val ui by viewModel.uiState.collectAsState()
 
     Scaffold(
         topBar = { CreateTopBar(onBack) }
@@ -63,10 +63,10 @@ fun CreateNewPasswordScreen(
 
             PasswordField(
                 value = ui.password,
-                onValueChange = vm::onPasswordChange,
+                onValueChange = viewModel::onPasswordChange,
                 placeholder = "Contraseña",
                 visible = ui.showPassword1,
-                onToggleVisibility = vm::togglePassword1,
+                onToggleVisibility = viewModel::togglePassword1,
                 isError = ui.passwordError != null,
                 supporting = ui.passwordError
             )
@@ -75,10 +75,10 @@ fun CreateNewPasswordScreen(
 
             PasswordField(
                 value = ui.confirm,
-                onValueChange = vm::onConfirmChange,
+                onValueChange = viewModel::onConfirmChange,
                 placeholder = "Confirmar contraseña",
                 visible = ui.showPassword2,
-                onToggleVisibility = vm::togglePassword2,
+                onToggleVisibility = viewModel::togglePassword2,
                 isError = ui.confirmError != null,
                 supporting = ui.confirmError
             )
@@ -90,13 +90,12 @@ fun CreateNewPasswordScreen(
                 enabled = ui.isFormValid && !ui.isLoading,
                 isLoading = ui.isLoading
             ) {
-                vm.submit(onSuccess = onSubmitSuccess)
+                viewModel.submit(onSuccess = onSubmitSuccess)
             }
         }
     }
 }
 
-/* ======= SUB-COMPONENTES ======= */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun CreateTopBar(onBack: () -> Unit) {

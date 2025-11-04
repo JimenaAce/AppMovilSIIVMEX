@@ -4,8 +4,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.ArrowBack
+
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -33,10 +32,10 @@ fun PasswordResetSuccessScreen(
                 .fillMaxSize()
                 .background(Color.White)
                 .padding(innerPadding)
-                .padding(horizontal = 24.dp),
+                .padding(horizontal = 20.dp),
             horizontalAlignment = Alignment.Start
         ) {
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(60.dp))
             Illustration(resId = R.drawable.resetpasswordsuccess)
             Spacer(Modifier.height(16.dp))
 
@@ -57,10 +56,6 @@ fun PasswordResetSuccessScreen(
     }
 }
 
-/* =================== SUB-COMPONENTES =================== */
-
-
-
 @Composable
 private fun Illustration(resId: Int) {
     Image(
@@ -68,7 +63,7 @@ private fun Illustration(resId: Int) {
         contentDescription = null,
         modifier = Modifier
             .fillMaxWidth()
-            .aspectRatio(1.4f),
+            .aspectRatio(1f),
         contentScale = ContentScale.Fit
     )
 }
@@ -78,15 +73,15 @@ private fun SuccessTitleAndSubtitle(title: String, subtitle: String) {
     Text(
         text = title,
         color = ColorAzulOscuro,
-        fontSize = 30.sp,
-        fontWeight = FontWeight.ExtraBold,
+        fontSize = 26.sp,
+        fontWeight = FontWeight.Bold,
         textAlign = TextAlign.Start,
         modifier = Modifier.fillMaxWidth()
     )
     Spacer(Modifier.height(8.dp))
     Text(
         text = subtitle,
-        fontSize = 14.sp,
+        fontSize = 16.sp,
         color = ColorGris,
         textAlign = TextAlign.Start,
         modifier = Modifier.fillMaxWidth()

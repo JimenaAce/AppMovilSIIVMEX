@@ -119,8 +119,6 @@ fun RegisterScreen(
     }
 }
 
-/* ---------- Subcomposables con estilo "filled" (fondo gris, sin borde) ---------- */
-
 @Composable
 private fun FilledInput(
     value: String,

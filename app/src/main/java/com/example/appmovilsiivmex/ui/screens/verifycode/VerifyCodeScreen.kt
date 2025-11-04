@@ -1,5 +1,6 @@
 package com.example.appmovilsiivmex.ui.screens.verifycode
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -11,7 +12,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -20,6 +27,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.appmovilsiivmex.R
 import com.example.appmovilsiivmex.ui.theme.ColorAzulOscuro
 import com.example.appmovilsiivmex.ui.theme.ColorGris
 import com.example.appmovilsiivmex.ui.theme.ColorGrisCajaTexto
@@ -43,6 +51,8 @@ fun VerifyCodeScreen(
                 .padding(24.dp),
             horizontalAlignment = Alignment.Start
         ) {
+            Illustration(resId = R.drawable.verifycode_illustration)
+            Spacer(Modifier.height(10.dp))
             Title()
             Spacer(Modifier.height(40.dp))
             cajasTexto(
@@ -68,13 +78,11 @@ fun VerifyCodeScreen(
     }
 }
 
-/* =================== SUB-COMPONENTES =================== */
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun VerifyTopBar(onBack: () -> Unit) {
     TopAppBar(
-        title = { }, // sin título visible para igualar el mock
+        title = { },
         navigationIcon = {
             IconButton(onClick = onBack) {
                 Icon(Icons.Outlined.ArrowBack, contentDescription = "Volver", tint = ColorAzulOscuro)
@@ -88,6 +96,19 @@ private fun VerifyTopBar(onBack: () -> Unit) {
 }
 
 @Composable
+private fun Illustration(resId: Int) {
+    Image(
+        painter = painterResource(resId),
+        contentDescription = null,
+        modifier = Modifier
+            .fillMaxWidth()
+            .aspectRatio(1.6f),
+        contentScale = ContentScale.FillWidth
+    )
+}
+
+
+@Composable
 private fun Title() {
     Text(
         "Ingrese su código de verificación",
@@ -98,6 +119,7 @@ private fun Title() {
     )
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun HelperTexts(
     canResend: Boolean,
@@ -110,8 +132,17 @@ private fun HelperTexts(
         fontSize = 14.sp
     )
     Spacer(Modifier.height(10.dp))
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Text("¿Si recibiste el código de verificación? ", color = ColorGris, fontSize = 14.sp)
+
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text(
+            "¿Si recibiste el código de verificación?",
+            color = ColorGris,
+            fontSize = 14.sp
+        )
+
         val resendColor = if (canResend) ColorAzulOscuro else ColorGris
         Text(
             text = if (canResend) "Reenviar" else "Reenviar (${secondsLeft}s)",
@@ -150,8 +181,6 @@ private fun VerifyButton(
     }
 }
 
-/* =================== OTP INPUT (4 CAJAS) =================== */
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun cajasTexto(
@@ -159,7 +188,9 @@ private fun cajasTexto(
     length: Int,
     onValueChange: (String) -> Unit
 ) {
-    // Capturamos el input con un TextField "invisible"
+    val focusRequester = remember { FocusRequester() }
+    val keyboard = LocalSoftwareKeyboardController.current
+
     TextField(
         value = value,
         onValueChange = { new ->
@@ -167,7 +198,7 @@ private fun cajasTexto(
             onValueChange(filtered)
         },
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
-        visualTransformation = PasswordVisualTransformation(), // ocultamos el cursor/texto
+        visualTransformation = PasswordVisualTransformation(),
         singleLine = true,
         textStyle = LocalTextStyle.current.copy(color = Color.Transparent),
         colors = TextFieldDefaults.colors(
@@ -182,13 +213,18 @@ private fun cajasTexto(
             unfocusedIndicatorColor = Color.Transparent
         ),
         modifier = Modifier
-            .fillMaxWidth()
-            .height(0.dp)
+            .focusRequester(focusRequester)
+            .size(width = 1.dp, height = 1.dp)
+            .alpha(0f)                         
     )
 
-    // Cajas grises visibles
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable {
+                focusRequester.requestFocus()
+                keyboard?.show()
+            },
         horizontalArrangement = Arrangement.spacedBy(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -198,7 +234,11 @@ private fun cajasTexto(
                 modifier = Modifier
                     .weight(1f)
                     .height(64.dp)
-                    .background(ColorGrisCajaTexto, RoundedCornerShape(8.dp)),
+                    .background(ColorGrisCajaTexto, RoundedCornerShape(8.dp))
+                    .clickable {
+                        focusRequester.requestFocus()
+                        keyboard?.show()
+                    },
                 contentAlignment = Alignment.Center
             ) {
                 Text(
