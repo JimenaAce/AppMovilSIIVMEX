@@ -1,10 +1,14 @@
 package com.example.appmovilsiivmex.navigation
 
+
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navigation
 import com.example.appmovilsiivmex.ui.screens.CalendarioHoyNoCirculaScreen
 import com.example.appmovilsiivmex.ui.screens.CalendarioVerificacionScreen
 import com.example.appmovilsiivmex.ui.screens.HoyNoCirculaScreen
@@ -18,23 +22,27 @@ import com.example.appmovilsiivmex.ui.screens.EditarVehiculoScreen
 import com.example.appmovilsiivmex.ui.screens.MiAutoConDrawerScreen
 import com.example.appmovilsiivmex.ui.screens.MultasconDrawerScreen
 import com.example.appmovilsiivmex.ui.screens.NotificacionesconDrawerScreen
+import com.example.appmovilsiivmex.ui.screens.forgotpassword.ForgotPasswordFlowViewModel
 import com.example.appmovilsiivmex.ui.screens.forgotpassword.ForgotPasswordScreen
 import com.example.appmovilsiivmex.ui.screens.login.LoginScreen
+import com.example.appmovilsiivmex.ui.screens.map.MapScreen
 import com.example.appmovilsiivmex.ui.screens.newpassword.CreateNewPasswordScreen
 import com.example.appmovilsiivmex.ui.screens.passwordreset.PasswordResetSuccessScreen
 import com.example.appmovilsiivmex.ui.screens.register.RegisterScreen
+import com.example.appmovilsiivmex.ui.screens.register.RegistroFlowViewModel
 import com.example.appmovilsiivmex.ui.screens.vehicle.VehicleAddScreen
 import com.example.appmovilsiivmex.ui.screens.verifycode.VerifyCodeScreen
+import com.example.appmovilsiivmex.ui.screens.verifycodereset.VerifyCodeResetScreen
 
 @Composable
 fun NavegacionAuto(
     controladorNavegacion: NavHostController,
-    paddingValues: PaddingValues
+    paddingValues: PaddingValues,
+    startDestination: String = "inicio_sesion"
 ) {
     NavHost(
         navController = controladorNavegacion,
-        // dejamos el que traía el main para no romper el flujo original
-        startDestination = "inicio_sesion"
+        startDestination = startDestination
     ) {
 
         // ─────────────────────
@@ -43,122 +51,189 @@ fun NavegacionAuto(
         composable("inicio_sesion") {
             LoginScreen(
                 onLoginSuccess = {
-                    controladorNavegacion.navigate("mis_vehiculos") {
+                    controladorNavegacion.navigate("inicio") {
                         popUpTo("inicio_sesion") { inclusive = true }
                     }
                 },
                 onRegisterClick = {
                     controladorNavegacion.navigate("registro"){
-                        popUpTo("inicio_sesion"){ inclusive = true }
+                        //popUpTo("inicio_sesion"){ inclusive = true }
                     }
                 },
                 onLinkClick = {
-                    controladorNavegacion.navigate("restablecer_contrasenia"){
-                        popUpTo("inicio_sesion"){ inclusive = true }
+                    controladorNavegacion.navigate("reestablecer_flow"){
+                        //popUpTo("inicio_sesion"){ inclusive = true }
                     }
                 }
             )
         }
 
         // ─────────────────────
-        // REGISTRO
+        // FLUJO DE REGISTRO
         // ─────────────────────
-        composable("registro") {
-            RegisterScreen(
-                onGoToLogin = {
-                    controladorNavegacion.navigate("inicio_sesion"){
-                        popUpTo("registro"){ inclusive = true }
-                    }
-                },
-                onContinue = {
-                    controladorNavegacion.navigate("registro_vehiculo"){
-                        popUpTo("registro") { inclusive = true }
-                    }
+        navigation(
+            startDestination = "registro",
+            route = "registro_flow"
+        ) {
+
+            // REGISTRO
+            composable("registro") { entry ->
+                // backStackEntry del gráfico "registro_flow"
+                val parentEntry = remember(entry) {
+                    controladorNavegacion.getBackStackEntry("registro_flow")
                 }
-            )
+                val viewModel = hiltViewModel<RegistroFlowViewModel>(parentEntry)
+
+                RegisterScreen(
+                    onGoToLogin = {
+                        controladorNavegacion.navigate("inicio_sesion") {
+                            popUpTo("registro_flow") { inclusive = true }
+                        }
+                    },
+                    onContinue = { email ->
+                        viewModel.updateEmail(email)
+                        controladorNavegacion.navigate("codigo_verificacion")
+                    }
+                )
+            }
+
+            // CÓDIGO DE VERIFICACIÓN
+            composable("codigo_verificacion") { entry ->
+                val parentEntry = remember(entry) {
+                    controladorNavegacion.getBackStackEntry("registro_flow")
+                }
+                val registroFlowViewModel = hiltViewModel<RegistroFlowViewModel>(parentEntry)
+
+                VerifyCodeScreen(
+                    email = registroFlowViewModel.email.orEmpty(),
+                    onBack = { controladorNavegacion.popBackStack() },
+                    onVerified = {
+                        controladorNavegacion.navigate("registro_vehiculo")
+                    }
+                )
+            }
+
+            // REGISTRO VEHÍCULO
+            composable("registro_vehiculo") { entry ->
+                val parentEntry = remember(entry) {
+                    controladorNavegacion.getBackStackEntry("registro_flow")
+                }
+                val registroFlowViewModel = hiltViewModel<RegistroFlowViewModel>(parentEntry)
+
+                VehicleAddScreen(
+                    email = registroFlowViewModel.email.orEmpty(),
+                    onBack = {
+                        controladorNavegacion.popBackStack()
+                    },
+                    onSubmit = {
+                        controladorNavegacion.navigate("inicio_sesion") {
+                            popUpTo("registro_flow") { inclusive = true }
+                        }
+                    }
+                )
+            }
         }
+
+
         // ─────────────────────
-        // AGREGAR VEHÍCULO
+        // FLUJO RESTABLECER CONTRASEÑA
         // ─────────────────────
-        composable("registro_vehiculo"){
-            VehicleAddScreen(
-                onBack = {
-                    controladorNavegacion.navigate("registro"){
-                        popUpTo("registro_vehiculo"){ inclusive = true }
-                    }
-                },
-                onSubmit = {
-                    // Lógica de registro, de momento se regresará al inicio de sesión
-                    controladorNavegacion.navigate("inicio_sesion"){
-                        popUpTo("registro_vehiculo") { inclusive = true }
-                    }
+        navigation(
+            startDestination = "restablecer_contrasenia",
+            route = "reestablecer_flow"
+        ){
+
+            // ─────────────────────
+            // RESTABLECER CONTRASEÑA
+            // ─────────────────────
+            composable("restablecer_contrasenia"){ entry ->
+
+                val parentEntry = remember(entry) {
+                    controladorNavegacion.getBackStackEntry("reestablecer_flow")
                 }
-            )
-        }
-        // ─────────────────────
-        // RESTABLECER CONTRASEÑA
-        // ─────────────────────
-        composable("restablecer_contrasenia"){
-            ForgotPasswordScreen(
-                onBack = {
-                    controladorNavegacion.navigate("inicio_sesion"){
-                        popUpTo("restablecer_contrasenia"){ inclusive = true }
+                val forgotPasswordFlowViewModel = hiltViewModel<ForgotPasswordFlowViewModel>(parentEntry)
+
+                ForgotPasswordScreen(
+                    onBack = {
+                        //controladorNavegacion.navigate("inicio_sesion"){
+                        //popUpTo("restablecer_contrasenia"){ inclusive = true }
+                        //}
+                        controladorNavegacion.navigate("inicio_sesion") {
+                            popUpTo("inicio_sesion") { inclusive = true }
+                        }
+                    },
+                    onSent = { email ->
+                        forgotPasswordFlowViewModel.updateEmail(email)
+                        controladorNavegacion.navigate("codigo_verificacion_reestablecer")
                     }
-                },
-                onSent = {
-                    // Agregar demás lógica para la base de datos
-                    controladorNavegacion.navigate("codigo_verificacion"){
-                        popUpTo("restablecer_contrasenia"){ inclusive = true }
-                    }
+                )
+            }
+
+
+            // ─────────────────────
+            // CÓDIGO DE VERIFICACIÓN PARA REESTABLECER CONTRASEÑA
+            // ─────────────────────
+            composable("codigo_verificacion_reestablecer") { entry ->
+                val parentEntry = remember(entry) {
+                    controladorNavegacion.getBackStackEntry("reestablecer_flow")
                 }
-            )
-        }
-        // ─────────────────────
-        // CÓDIGO DE VERIFICACIÓN
-        // ─────────────────────
-        composable("codigo_verificacion"){
-            VerifyCodeScreen(
-                onBack = {
-                    controladorNavegacion.navigate("restablecer_contrasenia"){
-                        popUpTo("codigo_verificacion"){ inclusive = true }
-                    }
-                },
-                onVerified = {
-                    // Agregar la lógica de envio de correo así como el envio de la base de datos
-                    controladorNavegacion.navigate("nueva_contrasenia"){
-                        popUpTo("codigo_verificacion"){ inclusive = true }
-                    }
+                val forgotPasswordFlowViewModel = hiltViewModel<ForgotPasswordFlowViewModel>(parentEntry)
+
+                VerifyCodeResetScreen(
+                    email = forgotPasswordFlowViewModel.email.orEmpty(),
+                    onBack = {
+
+                        controladorNavegacion.navigate("restablecer_contrasenia") {
+                            popUpTo("reestablecer_flow") { inclusive = true }
+                        }
+                             },
+                    onVerified = { controladorNavegacion.navigate("nueva_contrasenia")}
+                )
+            }
+
+            // ─────────────────────
+            // NUEVA CONTRASENIA
+            // ─────────────────────
+            composable("nueva_contrasenia"){ entry ->
+
+                val parentEntry = remember(entry) {
+                    controladorNavegacion.getBackStackEntry("reestablecer_flow")
                 }
-            )
-        }
-        // ─────────────────────
-        // NUEVA CONTRASENIA
-        // ─────────────────────
-        composable("nueva_contrasenia"){
-            CreateNewPasswordScreen(
-                onBack = {
-                    controladorNavegacion.navigate("codigo_verificacion"){
-                        popUpTo("nueva_contrasenia"){ inclusive = true }
+                val forgotPasswordFlowViewModel = hiltViewModel<ForgotPasswordFlowViewModel>(parentEntry)
+
+                CreateNewPasswordScreen(
+                    email = forgotPasswordFlowViewModel.email.orEmpty(),
+                    onBack = {
+
+                        controladorNavegacion.popBackStack()
+                        /*
+                        controladorNavegacion.navigate("codigo_verificacion"){
+                            popUpTo("nueva_contrasenia"){ inclusive = true }
+                        }
+
+                         */
+                    },
+                    onSubmitSuccess = {
+
+                        controladorNavegacion.navigate("contrasenia_reestablecida") {
+                            popUpTo("reestablecer_flow") { inclusive = true }
+                        }
                     }
-                },
-                onSubmitSuccess = {
-                    controladorNavegacion.navigate("contrasenia_reestablecida"){
-                        popUpTo("nueva_contrasenia"){ inclusive = true }
+                )
+            }
+
+            // ─────────────────────
+            // CONTRASEÑA REESTABLECIDA
+            // ─────────────────────
+            composable("contrasenia_reestablecida"){
+                PasswordResetSuccessScreen (
+                    onGoToLogin = {
+                        controladorNavegacion.navigate("inicio_sesion"){
+                            popUpTo("contrasenia_reestablecida"){ inclusive = true }
+                        }
                     }
-                }
-            )
-        }
-        // ─────────────────────
-        // NUEVA CONTRASENIA
-        // ─────────────────────
-        composable("contrasenia_reestablecida"){
-            PasswordResetSuccessScreen (
-                onGoToLogin = {
-                    controladorNavegacion.navigate("inicio_sesion"){
-                        popUpTo("contrasenia_reestablecida"){ inclusive = true }
-                    }
-                }
-            )
+                )
+            }
         }
 
         // ─────────────────────
@@ -191,7 +266,9 @@ fun NavegacionAuto(
             HoyNoCirculaScreen()
         }
         composable("ubicacion") {
-            PantallaPlaceholder("Ubicación")
+            //PantallaPlaceholder
+            //VehicleMapScreen()
+            MapScreen()
         }
 
         // ─────────────────────

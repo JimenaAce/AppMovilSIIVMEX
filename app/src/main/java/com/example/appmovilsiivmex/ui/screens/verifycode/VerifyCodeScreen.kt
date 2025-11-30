@@ -7,7 +7,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -23,19 +23,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.appmovilsiivmex.R
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.appmovilsiivmex.ui.theme.ColorAzulOscuro
 import com.example.appmovilsiivmex.ui.theme.ColorGris
 import com.example.appmovilsiivmex.ui.theme.ColorGrisCajaTexto
 
-@Preview(showBackground = true)
 @Composable
 fun VerifyCodeScreen(
-    viewModel: VerifyCodeViewModel = viewModel(),
+    viewModel: VerifyCodeViewModel = hiltViewModel(),
+    email: String,
     onBack: () -> Unit = {},
     onVerified: () -> Unit = {}
 ) {
@@ -46,33 +44,34 @@ fun VerifyCodeScreen(
     ) { innerPadding ->
         Column(
             modifier = Modifier
+                .background(Color.White)
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(24.dp),
-            horizontalAlignment = Alignment.Start
+                .padding(horizontal = 24.dp, vertical = 28.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Illustration(resId = R.drawable.verifycode_illustration)
-            Spacer(Modifier.height(10.dp))
-            Title()
+
             Spacer(Modifier.height(40.dp))
-            cajasTexto(
+            TitleAndSubtitle()
+            Spacer(Modifier.height(50.dp))
+
+            CajasTexto(
                 value = ui.code,
-                length = 4,
                 onValueChange = viewModel::onCodeChange
             )
-
             Spacer(Modifier.height(30.dp))
+
             HelperTexts(
                 canResend = ui.resendSeconds == 0,
                 secondsLeft = ui.resendSeconds,
-                onResend = { viewModel.resendCode() }
+                onResend = { viewModel.resendCode(email = email) }
             )
+            Spacer(Modifier.height(120.dp))
 
-            Spacer(Modifier.height(60.dp))
             VerifyButton(
                 enabled = ui.code.length == 4 && !ui.isLoading,
                 isLoading = ui.isLoading,
-                onClick = { viewModel.verify(onSuccess = onVerified) }
+                onClick = { viewModel.verify(email = email, onSuccess = onVerified) }
             )
         }
     }
@@ -85,7 +84,7 @@ private fun VerifyTopBar(onBack: () -> Unit) {
         title = { },
         navigationIcon = {
             IconButton(onClick = onBack) {
-                Icon(Icons.Outlined.ArrowBack, contentDescription = "Volver", tint = ColorAzulOscuro)
+                Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Volver", tint = ColorAzulOscuro)
             }
         },
         colors = TopAppBarDefaults.topAppBarColors(
@@ -109,13 +108,21 @@ private fun Illustration(resId: Int) {
 
 
 @Composable
-private fun Title() {
+private fun TitleAndSubtitle() {
     Text(
-        "Ingrese su código de verificación",
+        "Verificación de código",
+        textAlign = TextAlign.Center,
         color = ColorAzulOscuro,
-        fontWeight = FontWeight.Bold,
-        fontSize = 34.sp,
-        lineHeight = 32.sp
+        fontSize = 28.sp,
+        fontWeight = FontWeight.ExtraBold,
+        modifier = Modifier.fillMaxWidth()
+    )
+    Text(
+        "Introduzca el código que le hemos enviado por correo electrónico.",
+        fontSize = 14.sp,
+        color = ColorGris,
+        textAlign = TextAlign.Center,
+        modifier = Modifier.fillMaxWidth()
     )
 }
 
@@ -126,26 +133,24 @@ private fun HelperTexts(
     secondsLeft: Int,
     onResend: () -> Unit
 ) {
+
+    val minutes = secondsLeft / 60
+    val seconds = secondsLeft % 60
+    val formatted = "%02d:%02d".format(minutes, seconds)
+
     Text(
-        "Enviamos un código de verificación al correo. Por favor revisa la bandeja de entrada",
+        "¿Si recibiste el código de verificación?",
         color = ColorGris,
         fontSize = 14.sp
     )
-    Spacer(Modifier.height(10.dp))
 
     FlowRow(
         horizontalArrangement = Arrangement.spacedBy(6.dp),
         verticalArrangement = Arrangement.Center
     ) {
-        Text(
-            "¿Si recibiste el código de verificación?",
-            color = ColorGris,
-            fontSize = 14.sp
-        )
-
         val resendColor = if (canResend) ColorAzulOscuro else ColorGris
         Text(
-            text = if (canResend) "Reenviar" else "Reenviar (${secondsLeft}s)",
+            text = if (canResend) "Reenviar" else "Reenviar (${formatted} s)",
             color = resendColor,
             fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
@@ -183,9 +188,8 @@ private fun VerifyButton(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun cajasTexto(
+private fun CajasTexto(
     value: String,
-    length: Int,
     onValueChange: (String) -> Unit
 ) {
     val focusRequester = remember { FocusRequester() }
@@ -194,7 +198,7 @@ private fun cajasTexto(
     TextField(
         value = value,
         onValueChange = { new ->
-            val filtered = new.filter { it.isDigit() }.take(length)
+            val filtered = new.filter { it.isDigit() }.take(4)
             onValueChange(filtered)
         },
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
@@ -228,12 +232,12 @@ private fun cajasTexto(
         horizontalArrangement = Arrangement.spacedBy(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        repeat(length) { index ->
+        repeat(4) { index ->
             val charOrBlank = value.getOrNull(index)?.toString() ?: ""
             Box(
                 modifier = Modifier
                     .weight(1f)
-                    .height(64.dp)
+                    .height(80.dp)
                     .background(ColorGrisCajaTexto, RoundedCornerShape(8.dp))
                     .clickable {
                         focusRequester.requestFocus()

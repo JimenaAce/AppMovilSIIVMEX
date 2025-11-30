@@ -3,9 +3,10 @@ package com.example.appmovilsiivmex.ui.screens.newpassword
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -21,77 +22,74 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.appmovilsiivmex.R
 import com.example.appmovilsiivmex.ui.theme.ColorAzulOscuro
 import com.example.appmovilsiivmex.ui.theme.ColorGris
 
-@Preview(showBackground = true)
 @Composable
 fun CreateNewPasswordScreen(
-    viewModel: CreateNewPasswordViewModel = viewModel(),
+    viewModel: CreateNewPasswordViewModel = hiltViewModel(),
+    email: String,
     onBack: () -> Unit = {},
     onSubmitSuccess: () -> Unit = {}
 ) {
-    val ui by viewModel.uiState.collectAsState()
+    val uiState by viewModel.uiState.collectAsState()
+
+    // Navegar cuando el cambio de contraseña sea exitoso
+    LaunchedEffect(uiState.changePasswordSuccess) {
+        if (uiState.changePasswordSuccess) onSubmitSuccess()
+    }
 
     Scaffold(
         topBar = { CreateTopBar(onBack) }
-    ) { inner ->
+    ) { innerPadding ->
         Column(
             modifier = Modifier
                 .background(Color.White)
                 .fillMaxSize()
-                .padding(inner)
-                .padding(8.dp)
-                .padding(20.dp),
-            horizontalAlignment = Alignment.Start
+                .padding(innerPadding)
+                .padding(horizontal = 24.dp, vertical = 28.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
-            Illustration(resId = R.drawable.reserpassword_illustration)
             Spacer(Modifier.height(20.dp))
+            Illustration(resId = R.drawable.changepassword)
+            Spacer(Modifier.height(10.dp))
 
-            TitleAndSubtitle(
-                title = "Crear nueva contraseña",
-                subtitle = "Tu nueva contraseña debe ser diferente a la anterior contraseña"
-            )
-
+            TitleAndSubtitle()
             Spacer(Modifier.height(24.dp))
 
-            PasswordField(
-                value = ui.password,
+            PasswordFilledInput(
+                value = uiState.password,
                 onValueChange = viewModel::onPasswordChange,
+                visible = uiState.showPassword1,
+                onToggleVisibility = viewModel::onTogglePasswordVisibility1,
                 placeholder = "Contraseña",
-                visible = ui.showPassword1,
-                onToggleVisibility = viewModel::togglePassword1,
-                isError = ui.passwordError != null,
-                supporting = ui.passwordError
+                error = uiState.passwordError,
+                enabled = !uiState.isLoading
             )
 
             Spacer(Modifier.height(20.dp))
 
-            PasswordField(
-                value = ui.confirm,
+            PasswordFilledInput(
+                value = uiState.confirm,
                 onValueChange = viewModel::onConfirmChange,
+                visible = uiState.showPassword2,
+                onToggleVisibility = viewModel::onTogglePasswordVisibility2,
                 placeholder = "Confirmar contraseña",
-                visible = ui.showPassword2,
-                onToggleVisibility = viewModel::togglePassword2,
-                isError = ui.confirmError != null,
-                supporting = ui.confirmError
+                error = uiState.confirmError,
+                enabled = !uiState.isLoading
             )
 
             Spacer(Modifier.height(22.dp))
-
             PrimaryButton(
-                text = "Enviar",
-                enabled = ui.isFormValid && !ui.isLoading,
-                isLoading = ui.isLoading
-            ) {
-                viewModel.submit(onSuccess = onSubmitSuccess)
-            }
+                isLoading = uiState.isLoading,
+                enabled =  uiState.isChangeEnabled,
+                onClick = { viewModel.onSubmitClick(email = email)}
+            )
         }
     }
 }
@@ -103,7 +101,7 @@ private fun CreateTopBar(onBack: () -> Unit) {
         title = { },
         navigationIcon = {
             IconButton(onClick = onBack) {
-                Icon(Icons.Outlined.ArrowBack, contentDescription = "Volver", tint = ColorAzulOscuro)
+                Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Volver", tint = ColorAzulOscuro)
             }
         },
         colors = TopAppBarDefaults.topAppBarColors(
@@ -119,81 +117,94 @@ private fun Illustration(resId: Int) {
         painter = painterResource(resId),
         contentDescription = null,
         modifier = Modifier
-            .fillMaxWidth()
-            .aspectRatio(1.4f),
+            .size(200.dp),
         contentScale = ContentScale.Fit
     )
 }
 
 @Composable
-private fun TitleAndSubtitle(title: String, subtitle: String) {
+private fun TitleAndSubtitle() {
     Text(
-        title,
+        "Cambiar contraseña",
+        textAlign = TextAlign.Center,
         color = ColorAzulOscuro,
-        fontSize = 26.sp,
+        fontSize = 28.sp,
         fontWeight = FontWeight.ExtraBold,
-        textAlign = TextAlign.Start
+        modifier = Modifier.fillMaxWidth()
     )
-    Spacer(Modifier.height(6.dp))
-    Text(subtitle, color = ColorGris, fontSize = 14.sp)
+    Text(
+        "Establezca una nueva contraseña para su cuenta.",
+        fontSize = 14.sp,
+        color = ColorGris,
+        textAlign = TextAlign.Center,
+        modifier = Modifier.fillMaxWidth()
+    )
 }
 
+
 @Composable
-private fun PasswordField(
+private fun PasswordFilledInput(
     value: String,
     onValueChange: (String) -> Unit,
-    placeholder: String,
     visible: Boolean,
     onToggleVisibility: () -> Unit,
-    isError: Boolean,
-    supporting: String?
+    placeholder: String,
+    error: String?,
+    enabled: Boolean = true
 ) {
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 56.dp),
         label = { Text(placeholder) },
-        leadingIcon = { Icon(Icons.Outlined.Lock, contentDescription = null, tint = ColorGris) },
+        placeholder = { Text("**********", color = ColorGris) },
+        leadingIcon = {
+            Icon(
+                Icons.Outlined.Lock,
+                contentDescription = null,
+                tint = ColorGris
+            )
+        },
         trailingIcon = {
             IconButton(onClick = onToggleVisibility) {
                 Icon(
-                    imageVector = if (visible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
+                    if (visible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
                     contentDescription = if (visible) "Ocultar" else "Mostrar",
                     tint = ColorGris
                 )
             }
         },
         visualTransformation = if (visible) VisualTransformation.None else PasswordVisualTransformation(),
+        shape = RoundedCornerShape(12.dp),
         singleLine = true,
-        isError = isError,
-        supportingText = supporting?.let { { Text(it, color = MaterialTheme.colorScheme.error, fontSize = 12.sp) } },
+        enabled = enabled,
+        isError = error != null,
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-        shape = MaterialTheme.shapes.medium,
         colors = OutlinedTextFieldDefaults.colors(
             focusedBorderColor = ColorAzulOscuro,
             unfocusedBorderColor = ColorGris,
             focusedTextColor = ColorAzulOscuro,
             unfocusedTextColor = ColorGris
         ),
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = 56.dp)
+        supportingText = error?.let { {Text(it)} }
     )
 }
 
 @Composable
 private fun PrimaryButton(
-    text: String,
-    enabled: Boolean,
     isLoading: Boolean,
+    enabled: Boolean,
     onClick: () -> Unit
 ) {
     Button(
         onClick = onClick,
-        enabled = enabled,
+        enabled = enabled && !isLoading,
         modifier = Modifier
             .fillMaxWidth()
             .height(52.dp),
-        shape = MaterialTheme.shapes.medium,
+        shape = RoundedCornerShape(14.dp),
         colors = ButtonDefaults.buttonColors(containerColor = ColorAzulOscuro)
     ) {
         if (isLoading) {
@@ -203,7 +214,7 @@ private fun PrimaryButton(
                 strokeWidth = 2.dp
             )
         } else {
-            Text(text, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            Text("Registrarse", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
         }
     }
 }

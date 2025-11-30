@@ -6,7 +6,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Email
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -16,58 +16,80 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.appmovilsiivmex.R
 import com.example.appmovilsiivmex.ui.theme.ColorAzulOscuro
 import com.example.appmovilsiivmex.ui.theme.ColorGris
 
-
-@Preview(showBackground = true)
 @Composable
 fun ForgotPasswordScreen(
-    viewModel: ForgotPasswordViewModel = viewModel(),
+    viewModel: ForgotPasswordViewModel = hiltViewModel(),
     onBack: () -> Unit = {},
-    onSent: () -> Unit = {}
+    onSent: (String) -> Unit = {}
 ) {
-    val ui by viewModel.uiState.collectAsState()
+    val uiState by viewModel.uiState.collectAsState()
+
+    // Navegar cuando el correo sea válido
+    LaunchedEffect(uiState.forgotPasswordSuccess) {
+        if (uiState.forgotPasswordSuccess) onSent(uiState.email)
+    }
 
     Scaffold(
-        topBar = { ForgotTopBar(onBack) },
-        containerColor = Color.White
+        topBar = { ForgotTopBar(onBack) }
     ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color.White)
                 .padding(innerPadding)
-                .padding(horizontal = 24.dp),
-            horizontalAlignment = Alignment.Start
+                .padding(horizontal = 24.dp, vertical = 28.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(Modifier.height(15.dp))
-            Illustration(resId = R.drawable.forgotpassword_illustration)
-            Spacer(Modifier.height(14.dp))
-            TitleAndSubtitle(
-                title = "Restablecer contraseña",
-                subtitle = "Por favor ingresa tu correo electrónico para recibir el código de verificación"
-            )
-            Spacer(Modifier.height(30.dp))
-            EmailField(
-                value = ui.email,
-                onValueChange = viewModel::onEmailChange,
-                error = ui.emailError
-            )
+            Illustration(resId = R.drawable.forgotpassword)
+            Spacer(Modifier.height(10.dp))
+
+            TitleAndSubtitle()
             Spacer(Modifier.height(40.dp))
-            SendButton(
-                isLoading = ui.isLoading,
-                enabled = ui.email.isNotBlank() && ui.emailError == null,
-                onClick = { viewModel.sendReset(onSuccess = onSent) }
+
+            EmailField(
+                value = uiState.email,
+                onValueChange = viewModel::onEmailChange,
+                leading = {
+                    Icon(
+                        Icons.Outlined.Email,
+                        contentDescription = null,
+                        tint = ColorGris
+                    )
+                },
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Email,
+                    imeAction = ImeAction.Next
+                ),
+                error = uiState.emailError,
+                enabled = !uiState.isLoading
             )
-            Spacer(Modifier.height(12.dp))
+            if (uiState.forgotPasswordError != null) {
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = uiState.forgotPasswordError ?: "",
+                    color = MaterialTheme.colorScheme.error,
+                    fontSize = 14.sp,
+                    textAlign = TextAlign.Start,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+            Spacer(Modifier.height(25.dp))
+
+            SendButton(
+                isLoading = uiState.isLoading,
+                //enabled = ui.email.isNotBlank() && ui.emailError == null,
+                onClick = viewModel::onSendEmail
+            )
         }
     }
 }
@@ -81,16 +103,15 @@ private fun ForgotTopBar(onBack: () -> Unit) {
         navigationIcon = {
             IconButton(onClick = onBack) {
                 Icon(
-                    imageVector = Icons.Outlined.ArrowBack,
+                    imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
                     contentDescription = "Volver",
                     tint = ColorAzulOscuro
                 )
             }
         },
         colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = Color.White,
-            navigationIconContentColor = ColorAzulOscuro,
-            titleContentColor = ColorAzulOscuro
+            containerColor = Color.Transparent,
+            navigationIconContentColor = ColorAzulOscuro
         )
     )
 }
@@ -102,69 +123,71 @@ private fun Illustration(resId: Int) {
         painter = painterResource(resId),
         contentDescription = null,
         modifier = Modifier
-            .fillMaxWidth()
-            .aspectRatio(1.4f),
+            .size(200.dp),
         contentScale = ContentScale.Fit
     )
 }
 
 @Composable
-private fun TitleAndSubtitle(title: String, subtitle: String) {
+private fun TitleAndSubtitle() {
     Text(
-        title,
-        textAlign = TextAlign.Start,
+        "Reestablecer contraseña",
+        textAlign = TextAlign.Center,
         color = ColorAzulOscuro,
-        fontSize = 25.sp,
+        fontSize = 26.sp,
         fontWeight = FontWeight.Bold,
         modifier = Modifier.fillMaxWidth()
     )
-    Spacer(Modifier.height(8.dp))
+    Spacer(Modifier.height(5.dp))
     Text(
-        subtitle,
+        "Ingresa tu correo electrónico para reestablecer tu contraseña",
         fontSize = 14.sp,
         color = ColorGris,
-        textAlign = TextAlign.Start,
+        textAlign = TextAlign.Center,
         modifier = Modifier.fillMaxWidth()
     )
 }
-
 @Composable
 private fun EmailField(
     value: String,
     onValueChange: (String) -> Unit,
-    error: String?
+    leading: @Composable (() -> Unit)? = null,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    error: String?,
+    enabled: Boolean = true
 ) {
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
+        modifier = Modifier
+            .fillMaxWidth(),
         label = { Text("Correo electrónico") },
-        leadingIcon = { Icon(Icons.Outlined.Email, null, tint = ColorGris) },
+        placeholder = { Text("ejemplo@gmail.com", color = ColorGris)},
+        leadingIcon = leading,
+        shape = RoundedCornerShape(12.dp),
         singleLine = true,
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+        enabled = enabled,
         isError = error != null,
-        supportingText = error?.let { { Text(it, color = MaterialTheme.colorScheme.error, fontSize = 12.sp) } },
-        shape = RoundedCornerShape(14.dp),
+        keyboardOptions = keyboardOptions,
         colors = OutlinedTextFieldDefaults.colors(
             focusedBorderColor = ColorAzulOscuro,
             unfocusedBorderColor = ColorGris,
             focusedTextColor = ColorAzulOscuro,
             unfocusedTextColor = ColorGris
         ),
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = 56.dp)
+        supportingText = error?.let { {Text(it)} }
     )
 }
 
 @Composable
 private fun SendButton(
     isLoading: Boolean,
-    enabled: Boolean,
+    //enabled: Boolean,
     onClick: () -> Unit
 ) {
     Button(
         onClick = onClick,
-        enabled = enabled,
+        //enabled = enabled,
         modifier = Modifier
             .fillMaxWidth()
             .height(52.dp),

@@ -5,6 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.navigation.NavController
 import com.example.appmovilsiivmex.navigation.MenuHamburguesa
+import com.example.appmovilsiivmex.ui.screens.notification.NotificacionesScreen
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -31,6 +32,7 @@ fun NotificacionesconDrawerScreen(
     ) {
         NotificacionesScreen(
             navController = navController,
+            userId = 7,
             onMenuClick = {
                 scope.launch { drawerState.open() }
             }

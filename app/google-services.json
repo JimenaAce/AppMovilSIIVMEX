@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "711329183221",
+    "project_id": "siivmex",
+    "storage_bucket": "siivmex.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:711329183221:android:c3f078fb73da41ecc31cbc",
+        "android_client_info": {
+          "package_name": "com.example.appmovilsiivmex"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD-tlBFR6m01vZ662-B8MGYnmfRWPxvzx8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

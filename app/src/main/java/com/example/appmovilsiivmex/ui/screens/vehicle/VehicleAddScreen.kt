@@ -2,15 +2,11 @@ package com.example.appmovilsiivmex.ui.screens.vehicle
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.relocation.BringIntoViewRequester
-import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
@@ -22,12 +18,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
@@ -35,186 +27,142 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.appmovilsiivmex.R
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.appmovilsiivmex.ui.theme.ColorAzulOscuro
 import com.example.appmovilsiivmex.ui.theme.ColorGris
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
-@Preview(showBackground = true)
 @Composable
 fun VehicleAddScreen(
-    viewModel: VehicleViewModel = viewModel(),
+    viewModel: VehicleViewModel = hiltViewModel(),
+    email: String,
     onBack: () -> Unit = {},
-    onSubmit: (VehicleUiState) -> Unit = {}
+    onSubmit: () -> Unit = {}
 ) {
-    val ui by viewModel.uiState.collectAsState()
-    val kb = LocalSoftwareKeyboardController.current
+    val uiState by viewModel.uiState.collectAsState()
 
-    val listState = rememberLazyListState()
-    val bringIntoViewRequester = remember { BringIntoViewRequester() }
-    val focusManager = LocalFocusManager.current
+    // Navegar cuando el registro sea exitoso
+    LaunchedEffect(uiState.vehicleRegisterSuccess) {
+        if(uiState.vehicleRegisterSuccess) onSubmit()
+    }
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Volver")
-                    }
-                }
-            )
-        },
-        bottomBar = {
-            Surface {
-                Row(
-                    Modifier
-                        .fillMaxWidth()
-                        .navigationBarsPadding()
-                        .padding(16.dp)
-                ) {
-                    PrimaryButton(
-                        text = "Registrar",
-                        isLoading = ui.isLoading,
-                        onClick = {
-                            focusManager.clearFocus()
-                            kb?.hide()
-                            viewModel.submit(onSuccess = { onSubmit(ui) })
-                        }
-                    )
-                }
-            }
-        }
-    ) { inner ->
-        LazyColumn(
-            state = listState,
+        topBar = { CarTopBar(onBack) }
+    ){ innerPadding ->
+
+        Column(
             modifier = Modifier
+                .background(Color.White)
                 .fillMaxSize()
-                .imePadding()
-                .padding(inner)
-                .padding(horizontal = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
-            contentPadding = PaddingValues(bottom = 24.dp)
-        ) {
-            item {
-                Illustration(resId = R.drawable.addvehicle_illustration)
-            }
-            item {
-                TitleAndSubtitle(
-                    title = "Datos del vehículo",
-                    subtitle = "Completa la información para continuar"
-                )
-            }
-            item {
-                // Placa (con bringIntoView al enfocar)
-                FocusableWrapper(bringIntoViewRequester) {
-                    PlateInput(
-                        value = ui.plate,
-                        onValueChange = viewModel::onPlateChange,
-                        placeholder = "Placa",
-                        imeAction = ImeAction.Next
-                    )
-                }
-            }
-            item {
-                FilledInput(
-                    value = ui.nickname,
-                    onValueChange = viewModel::onNicknameChange,
-                    placeholder = "Nombre para su vehículo",
-                    leading = {
-                        Icon(
-                            Icons.Outlined.DriveFileRenameOutline,
-                            null,
-                            tint = ColorGris
-                        )
-                    },
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
-                )
-            }
-            item {
-                FilledInput(
-                    value = ui.year,
-                    onValueChange = viewModel::onYearChange,
-                    placeholder = "Año",
-                    leading = { Icon(Icons.Outlined.CalendarMonth, null, tint = ColorGris) },
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Number,
-                        imeAction = ImeAction.Next
-                    )
-                )
-            }
-            item {
-                FilledInput(
-                    value = ui.brand,
-                    onValueChange = viewModel::onBrandChange,
-                    placeholder = "Marca",
-                    leading = { Icon(Icons.Outlined.DirectionsCar, null, tint = ColorGris) },
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                    keyboardActions = KeyboardActions(onDone = {
-                        focusManager.clearFocus()
-                        kb?.hide()
-                    })
-                )
-            }
-            item {
-                Text(
-                    "Holograma",
-                    color = ColorGris,
-                    fontSize = 14.sp,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(Modifier.height(8.dp))
-                HologramChips(
-                    options = listOf("E", "00", "0", "1", "2"),
-                    selected = ui.hologram,
-                    onSelected = viewModel::onHologramChange
-                )
-            }
+                .padding(innerPadding)
+                .padding(horizontal = 24.dp, vertical = 28.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ){
+
+            TitleAndSubtitle()
+            Spacer(Modifier.height(20.dp))
+
+            PlateFilledInput(
+                value = uiState.plate,
+                onValueChange = viewModel::onPlateChange,
+                keyboardOptions = KeyboardOptions(
+                    imeAction = ImeAction.Next
+                ),
+                error = uiState.plateError,
+                enabled = !uiState.isLoading
+            )
+            Spacer(Modifier.height(12.dp))
+
+            FilledInput(
+                value = uiState.carName,
+                onValueChange = viewModel::onCarNameChange,
+                label = "Nombre del vehículo",
+                placeholder = "",
+                leading = {Icon(Icons.Outlined.DriveFileRenameOutline, null, tint = ColorGris)},
+                keyboardOptions = KeyboardOptions(
+                    imeAction = ImeAction.Next
+                ),
+                error = null,
+                enabled = !uiState.isLoading
+            )
+            Spacer(Modifier.height(12.dp))
+
+            FilledInput(
+                value = uiState.year,
+                onValueChange = viewModel::onYearChange,
+                label = "Año",
+                placeholder = "YYYY",
+                leading = {Icon(Icons.Outlined.CalendarMonth, null, tint = ColorGris)},
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Number,
+                    imeAction = ImeAction.Next
+                ),
+                error = null,
+                enabled = !uiState.isLoading
+            )
+            Spacer(Modifier.height(12.dp))
+
+            FilledInput(
+                value = uiState.brand,
+                onValueChange = viewModel::onBrandChange,
+                label = "Marca",
+                placeholder = "",
+                leading = {Icon(Icons.Outlined.DirectionsCar, null, tint = ColorGris)},
+                keyboardOptions = KeyboardOptions(
+                    imeAction = ImeAction.Done
+                ),
+                error = null,
+                enabled = !uiState.isLoading
+            )
+            Spacer(Modifier.height(20.dp))
+
+            Text(
+                "Holograma",
+                color = ColorGris,
+                fontSize = 14.sp,
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(Modifier.height(15.dp))
+
+            HologramChips(
+                options = listOf("E", "00", "0", "1", "2"),
+                selected = uiState.hologram,
+                onSelected = viewModel::onHologramChange
+            )
+            Spacer(Modifier.height(70.dp))
+
+            PrimaryButton(
+                isLoading = uiState.isLoading,
+                enabled = true,
+                onClick = { viewModel.onRegisterVehicle(email)}
+            )
+
         }
+
     }
 }
 
 
-@OptIn(ExperimentalFoundationApi::class)
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun FocusableWrapper(
-    bringIntoViewRequester: BringIntoViewRequester,
-    content: @Composable () -> Unit
-) {
-    Box(
-        modifier = Modifier
-            .bringIntoViewRequester(bringIntoViewRequester)
-    ) {
-        var hasFocus by remember { mutableStateOf(false) }
-        Box(
-            Modifier.onGloballyPositioned { }
-        ) {
-            CompositionLocalProvider {
-                val scope = rememberCoroutineScope()
-                Box(
-                    Modifier.onFocusChanged { st ->
-                        if (st.isFocused && !hasFocus) {
-                            hasFocus = true
-                            scope.launch {
-                                kotlinx.coroutines.delay(120)
-                                bringIntoViewRequester.bringIntoView()
-                            }
-                        } else if (!st.isFocused) {
-                            hasFocus = false
-                        }
-                    }
-                ) {
-                    content()
-                }
+private fun CarTopBar(onBack: () -> Unit) {
+    TopAppBar(
+        title = { },
+        navigationIcon = {
+            IconButton(onClick = onBack) {
+                Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Volver", tint = ColorAzulOscuro)
             }
-        }
-    }
+        },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = Color.Transparent,
+            navigationIconContentColor = ColorAzulOscuro
+        )
+    )
 }
+
 
 @Composable
 private fun Illustration(resId: Int) {
@@ -229,21 +177,60 @@ private fun Illustration(resId: Int) {
 }
 
 @Composable
-private fun TitleAndSubtitle(title: String, subtitle: String) {
+private fun TitleAndSubtitle() {
     Text(
-        title,
+        "Agregar Vehículo",
+        textAlign = TextAlign.Center,
         color = ColorAzulOscuro,
         fontSize = 32.sp,
-        textAlign = TextAlign.Start,
         fontWeight = FontWeight.Bold,
-        modifier = Modifier.fillMaxWidth(),
-    )
-    Spacer(Modifier.height(6.dp))
-    Text(
-        subtitle,
-        color = ColorGris,
-        fontSize = 14.sp,
         modifier = Modifier.fillMaxWidth()
+    )
+    Text(
+        "Ingresa la información de tu vehículo y empieza a mantenerlo al día",
+        fontSize = 14.sp,
+        color = ColorGris,
+        textAlign = TextAlign.Center,
+        modifier = Modifier.fillMaxWidth()
+    )
+}
+
+@Composable
+private fun PlateFilledInput(
+    value: String,
+    onValueChange: (String) -> Unit,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    error: String?,
+    enabled: Boolean = true
+) {
+    var placa by remember (value){
+        mutableStateOf(TextFieldValue(value, selection = TextRange(value.length)))
+    }
+    OutlinedTextField(
+        value = placa,
+        onValueChange = { new ->
+            val cleaned = new.text.uppercase().filter { it.isLetterOrDigit() || it == '-' }
+            val limited = cleaned.take(8)
+            placa = new.copy(text = limited, selection = TextRange(limited.length))
+            onValueChange(limited)
+        },
+        modifier = Modifier
+            .fillMaxWidth(),
+        label = { Text("Placa") },
+        placeholder = { Text("ABC123", color = ColorGris)},
+        leadingIcon = { Icon(Icons.Outlined.Numbers, null, tint = ColorGris) },
+        shape = RoundedCornerShape(12.dp),
+        singleLine = true,
+        enabled = enabled,
+        isError = error != null,
+        keyboardOptions = keyboardOptions,
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedBorderColor = ColorAzulOscuro,
+            unfocusedBorderColor = ColorGris,
+            focusedTextColor = ColorAzulOscuro,
+            unfocusedTextColor = ColorGris
+        ),
+        supportingText = error?.let { {Text(it)} }
     )
 }
 
@@ -251,74 +238,33 @@ private fun TitleAndSubtitle(title: String, subtitle: String) {
 private fun FilledInput(
     value: String,
     onValueChange: (String) -> Unit,
+    label: String,
     placeholder: String,
     leading: @Composable (() -> Unit)? = null,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
-    keyboardActions: KeyboardActions = KeyboardActions.Default,
-    isError: Boolean = false,
-    supportingText: String? = null
+    error: String?,
+    enabled: Boolean = true
 ) {
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
-        label = { Text(placeholder) },
+        modifier = Modifier
+            .fillMaxWidth(),
+        label = { Text(label) },
+        placeholder = { Text(placeholder, color = ColorGris)},
         leadingIcon = leading,
+        shape = RoundedCornerShape(12.dp),
         singleLine = true,
+        enabled = enabled,
+        isError = error != null,
         keyboardOptions = keyboardOptions,
-        keyboardActions = keyboardActions,
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = 56.dp),
-        shape = RoundedCornerShape(12.dp),
         colors = OutlinedTextFieldDefaults.colors(
             focusedBorderColor = ColorAzulOscuro,
             unfocusedBorderColor = ColorGris,
             focusedTextColor = ColorAzulOscuro,
             unfocusedTextColor = ColorGris
         ),
-        isError = isError
-    )
-    if (supportingText != null && isError) {
-        Spacer(Modifier.height(4.dp))
-        Text(supportingText, color = MaterialTheme.colorScheme.error, fontSize = 12.sp)
-    }
-}
-
-@Composable
-private fun PlateInput(
-    value: String,
-    onValueChange: (String) -> Unit,
-    placeholder: String,
-    imeAction: ImeAction
-) {
-    var tf by remember(value) {
-        mutableStateOf(TextFieldValue(value, selection = TextRange(value.length)))
-    }
-    OutlinedTextField(
-        value = tf,
-        onValueChange = { new ->
-            val cleaned = new.text.uppercase().filter { it.isLetterOrDigit() || it == '-' }
-            val limited = cleaned.take(8)
-            tf = new.copy(text = limited, selection = TextRange(limited.length))
-            onValueChange(limited)
-        },
-        label = { Text(placeholder) },
-        leadingIcon = { Icon(Icons.Outlined.Numbers, null, tint = ColorGris) },
-        singleLine = true,
-        keyboardOptions = KeyboardOptions(
-            keyboardType = KeyboardType.Ascii,
-            imeAction = imeAction
-        ),
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = 56.dp),
-        shape = RoundedCornerShape(12.dp),
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = ColorAzulOscuro,
-            unfocusedBorderColor = ColorGris,
-            focusedTextColor = ColorAzulOscuro,
-            unfocusedTextColor = ColorGris
-        )
+        supportingText = error?.let { {Text(it)} }
     )
 }
 
@@ -378,12 +324,13 @@ private fun CircleChip(
 
 @Composable
 private fun PrimaryButton(
-    text: String,
     isLoading: Boolean,
+    enabled: Boolean,
     onClick: () -> Unit
 ) {
     Button(
         onClick = onClick,
+        enabled = enabled && !isLoading,
         modifier = Modifier
             .fillMaxWidth()
             .height(52.dp),
@@ -397,7 +344,7 @@ private fun PrimaryButton(
                 strokeWidth = 2.dp
             )
         } else {
-            Text(text, fontSize = 16.sp, color = Color.White)
+            Text("Registrar", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
         }
     }
 }

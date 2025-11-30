@@ -20,88 +20,110 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.appmovilsiivmex.R
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.appmovilsiivmex.ui.theme.ColorAzulOscuro
 import com.example.appmovilsiivmex.ui.theme.ColorGris
 
-@Preview(showBackground = true)
 @Composable
 fun RegisterScreen(
-    viewModel: RegisterViewModel = viewModel(),
+    viewModel: RegisterViewModel = hiltViewModel(),
     onGoToLogin: () -> Unit = {},
-    onContinue: () -> Unit = {}
+    onContinue: (String) -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    var acceptedTerms by remember { mutableStateOf(false) }
+    var showTermsDialog by remember { mutableStateOf(false) }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    // Navegar cuando el registro sea exitoso
+    LaunchedEffect(uiState.registerSuccess) {
+        if(uiState.registerSuccess) onContinue(uiState.email)
+    }
+
+    Box(
+        modifier = Modifier.fillMaxSize()
+            .background(Color.White)
+    ) {
         Column(
             modifier = Modifier
-                .background(Color.White)
                 .fillMaxSize()
-                .padding(8.dp)
-                .padding(24.dp),
+                .padding(horizontal = 24.dp, vertical = 28.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(Modifier.height(12.dp))
-            Illustration(resId = R.drawable.register_illustration)
 
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(75.dp))
             TitleAndSubtitle()
-
             Spacer(Modifier.height(20.dp))
+
             FilledInput(
                 value = uiState.name,
                 onValueChange = viewModel::onNameChange,
-                placeholder = "Nombre completo",
+                label = "Nombre Completo",
+                placeholder = "",
                 leading = { Icon(Icons.Outlined.Person, contentDescription = null, tint = ColorGris) },
+                keyboardOptions = KeyboardOptions(
+                    imeAction = ImeAction.Next
+                ),
+                error = null,
                 enabled = !uiState.isLoading
             )
-
             Spacer(Modifier.height(12.dp))
+
             FilledInput(
                 value = uiState.email,
                 onValueChange = viewModel::onEmailChange,
-                placeholder = "Correo electrónico",
+                placeholder = "ejemplo@gmail.com",
+                label = "Correo electrónico",
                 leading = { Icon(Icons.Outlined.Email, contentDescription = null, tint = ColorGris) },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                isError = uiState.emailError != null,
-                supportingText = uiState.emailError,
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Email,
+                    imeAction = ImeAction.Next
+                ),
+                error = uiState.emailError,
                 enabled = !uiState.isLoading
             )
-
             Spacer(Modifier.height(12.dp))
+
             PasswordFilledInput(
                 value = uiState.password,
                 onValueChange = viewModel::onPasswordChange,
-                visible = uiState.showPassword,
-                onToggleVisibility = viewModel::onTogglePasswordVisibility,
+                visible = uiState.showPassword1,
+                onToggleVisibility = viewModel::onTogglePasswordVisibility1,
                 placeholder = "Contraseña",
-                isError = uiState.passwordError != null,
-                supportingText = uiState.passwordError,
+                error = uiState.passwordError,
                 enabled = !uiState.isLoading
             )
+            Spacer(Modifier.height(12.dp))
 
-            Spacer(Modifier.height(24.dp))
-            PrimaryButton(
-                text = "Continuar",
-                isLoading = uiState.isLoading,
-                onClick = {
-                    viewModel.onRegisterClick()
-                    onContinue()
-                }
+            PasswordFilledInput(
+                value = uiState.confirm,
+                onValueChange = viewModel::onConfirmChange,
+                visible = uiState.showPassword2,
+                onToggleVisibility = viewModel::onTogglePasswordVisibility2,
+                placeholder = "Confirmar contraseña",
+                error = uiState.confirmError,
+                enabled = !uiState.isLoading
             )
+            TermsAndConditionsRow(
+                checked = acceptedTerms,
+                onCheckedChange = { acceptedTerms = it },
+                onClickTerms = { showTermsDialog = true }
+            )
+            Spacer(Modifier.height(24.dp))
 
+            PrimaryButton(
+                isLoading = uiState.isLoading,
+                enabled = acceptedTerms && uiState.isRegisterEnabled,
+                onClick = viewModel::onRegisterClick
+            )
             Spacer(Modifier.height(16.dp))
 
-            // ¿Ya tienes una cuenta? Iniciar Sesión
             Row(
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
@@ -115,6 +137,24 @@ fun RegisterScreen(
                     modifier = Modifier.clickable { onGoToLogin() }
                 )
             }
+
+            if (showTermsDialog) {
+                AlertDialog(
+                    onDismissRequest = { showTermsDialog = false },
+                    confirmButton = {
+                        TextButton(onClick = { showTermsDialog = false }) {
+                            Text("Cerrar")
+                        }
+                    },
+                    title = { Text("Términos y condiciones") },
+                    text = {
+                        Text(
+                            "Aquí va el texto de tus términos y condiciones de la aplicación SIIVMEX..."
+                        )
+                    }
+                )
+            }
+
         }
     }
 }
@@ -123,37 +163,34 @@ fun RegisterScreen(
 private fun FilledInput(
     value: String,
     onValueChange: (String) -> Unit,
+    label: String,
     placeholder: String,
     leading: @Composable (() -> Unit)? = null,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
-    isError: Boolean = false,
-    supportingText: String? = null,
+    error: String?,
     enabled: Boolean = true
 ) {
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
         modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = 56.dp),
-        label = { Text(placeholder) },
+            .fillMaxWidth(),
+        label = { Text(label) },
+        placeholder = { Text(placeholder, color = ColorGris)},
         leadingIcon = leading,
         shape = RoundedCornerShape(12.dp),
         singleLine = true,
         enabled = enabled,
-        isError = isError,
+        isError = error != null,
         keyboardOptions = keyboardOptions,
         colors = OutlinedTextFieldDefaults.colors(
             focusedBorderColor = ColorAzulOscuro,
             unfocusedBorderColor = ColorGris,
             focusedTextColor = ColorAzulOscuro,
             unfocusedTextColor = ColorGris
-        )
+        ),
+        supportingText = error?.let { {Text(it)} }
     )
-    if (supportingText != null && isError) {
-        Spacer(Modifier.height(4.dp))
-        Text(text = supportingText, color = MaterialTheme.colorScheme.error, fontSize = 12.sp)
-    }
 }
 
 @Composable
@@ -163,8 +200,7 @@ private fun PasswordFilledInput(
     visible: Boolean,
     onToggleVisibility: () -> Unit,
     placeholder: String,
-    isError: Boolean = false,
-    supportingText: String? = null,
+    error: String?,
     enabled: Boolean = true
 ) {
     OutlinedTextField(
@@ -174,6 +210,7 @@ private fun PasswordFilledInput(
             .fillMaxWidth()
             .heightIn(min = 56.dp),
         label = { Text(placeholder) },
+        placeholder = { Text("**********", color = ColorGris) },
         leadingIcon = {
             Icon(
                 Icons.Outlined.Lock,
@@ -194,29 +231,57 @@ private fun PasswordFilledInput(
         shape = RoundedCornerShape(12.dp),
         singleLine = true,
         enabled = enabled,
-        isError = isError,
+        isError = error != null,
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
         colors = OutlinedTextFieldDefaults.colors(
             focusedBorderColor = ColorAzulOscuro,
             unfocusedBorderColor = ColorGris,
             focusedTextColor = ColorAzulOscuro,
             unfocusedTextColor = ColorGris
-        )
+        ),
+        supportingText = error?.let { {Text(it)} }
     )
-    if (supportingText != null && isError) {
-        Spacer(Modifier.height(4.dp))
-        Text(text = supportingText, color = MaterialTheme.colorScheme.error, fontSize = 12.sp)
+}
+
+@Composable
+private fun TermsAndConditionsRow(
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    onClickTerms: () -> Unit
+) {
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Checkbox(
+            checked = checked,
+            onCheckedChange = onCheckedChange
+        )
+        Text(
+            text = "Acepto los ",
+            fontSize = 14.sp,
+            color = ColorAzulOscuro
+        )
+        Text(
+            text = "términos y condiciones",
+            fontSize = 14.sp,
+            color = ColorAzulOscuro,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.clickable { onClickTerms() }
+        )
     }
 }
 
 @Composable
 private fun PrimaryButton(
-    text: String,
     isLoading: Boolean,
+    enabled: Boolean,
     onClick: () -> Unit
 ) {
     Button(
         onClick = onClick,
+        enabled = enabled && !isLoading,
         modifier = Modifier
             .fillMaxWidth()
             .height(52.dp),
@@ -230,19 +295,18 @@ private fun PrimaryButton(
                 strokeWidth = 2.dp
             )
         } else {
-            Text(text, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            Text("Registrarse", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
         }
     }
 }
 
 @Composable
-private fun Illustration(resId: Int) {
+private fun RegisterIllustration(resId: Int) {
     Image(
         painter = painterResource(resId),
-        contentDescription = "Ilustración",
+        contentDescription = "Ilustración de registro",
         modifier = Modifier
-            .fillMaxWidth()
-            .aspectRatio(1.4f),
+            .size(0.dp),
         contentScale = ContentScale.Fit
     )
 }
@@ -250,19 +314,18 @@ private fun Illustration(resId: Int) {
 @Composable
 private fun TitleAndSubtitle() {
     Text(
-        "Registrarse",
-        textAlign = TextAlign.Start,
+        "Crear cuenta",
+        textAlign = TextAlign.Center,
         color = ColorAzulOscuro,
         fontSize = 32.sp,
         fontWeight = FontWeight.Bold,
         modifier = Modifier.fillMaxWidth()
     )
-    Spacer(Modifier.height(6.dp))
     Text(
-        "Regístrate para poder iniciar sesión",
+        "¡Empieza hoy mismo y lleva el control de tus vehículos!",
         fontSize = 14.sp,
         color = ColorGris,
-        textAlign = TextAlign.Start,
+        textAlign = TextAlign.Center,
         modifier = Modifier.fillMaxWidth()
     )
 }

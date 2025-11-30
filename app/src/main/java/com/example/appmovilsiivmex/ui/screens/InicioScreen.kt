@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.ui.tooling.preview.Preview
 import com.example.appmovilsiivmex.ui.theme.ColorAzulOscuro
 import com.example.appmovilsiivmex.ui.theme.ColorFondoTarjeta
 import com.example.appmovilsiivmex.ui.theme.ColorVerde

@@ -2,40 +2,51 @@ package com.example.appmovilsiivmex.ui.screens.login
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.delay
-//import com.example.appmovilsiivmex.domain.usecase.LoginUseCase
-//import com.example.appmovilsiivmex.domain.usecase.ValidateEmailUseCase
+import com.example.appmovilsiivmex.data.local.SessionManager
+import com.example.appmovilsiivmex.data.remote.ApiClient
+import com.example.appmovilsiivmex.domain.usecase.LoginUseCase
+import com.example.appmovilsiivmex.domain.usecase.ValidateEmailUseCase
+import com.google.firebase.messaging.FirebaseMessaging
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class LoginViewModel(
-    //private val loginUseCase: LoginUseCase,
-    //private val validateEmailUseCase: ValidateEmailUseCase
+@HiltViewModel
+class LoginViewModel @Inject constructor(
+    private val loginUseCase: LoginUseCase,
+    private val validateEmailUseCase: ValidateEmailUseCase,
+    private val sessionManager: SessionManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(LoginUiState())
     val uiState: StateFlow<LoginUiState> = _uiState.asStateFlow()
 
-    fun onEmailChange(email: String) {
-        _uiState.update {
-            it.copy(
-                email = email,
-                emailError = null
-            )
+    // Verificar la sesión al iniciar
+    init {
+        checkExistingSesssion()
+    }
+
+    // Función que se encarga de revisar una sesión existente
+    private fun checkExistingSesssion(){
+        viewModelScope.launch {
+            if(sessionManager.isLoggedIn()){
+                _uiState.update { it.copy(loginSuccess = true) }
+            }
         }
+
+    }
+
+    fun onEmailChange(email: String) {
+        _uiState.update { it.copy(email = email, emailError = null) }
         validateForm()
     }
 
     fun onPasswordChange(password: String) {
-        _uiState.update {
-            it.copy(
-                password = password,
-                passwordError = null
-            )
-        }
+        _uiState.update { it.copy(password = password, passwordError = null) }
         validateForm()
     }
 
@@ -43,56 +54,32 @@ class LoginViewModel(
         _uiState.update { it.copy(showPassword = !it.showPassword) }
     }
 
-
-
     private fun validateForm() {
+
         val email = _uiState.value.email
         val password = _uiState.value.password
 
-        //val isEmailValid = validateEmailUseCase(email)
-        val isEmailValid = true
+        val isEmailValid = validateEmailUseCase(email)
         val isPasswordValid = password.length >= 8
 
         _uiState.update {
-            it.copy(isLoginEnabled = isEmailValid && isPasswordValid)
+            it.copy(
+                isLoginEnabled = isEmailValid && isPasswordValid,
+                emailError = if (!isEmailValid && email.isNotBlank()) "Correo inválido" else null,
+                passwordError = if (!isPasswordValid && password.isNotBlank()) "Mínimo 8 caracteres" else null
+            )
         }
+
+
     }
 
-
     fun onLoginClick() {
-
         if (!_uiState.value.isLoginEnabled) return
 
         viewModelScope.launch {
-
             _uiState.update { it.copy(isLoading = true, loginError = null) }
 
             try {
-
-                delay(2000)
-
-                val success = true
-
-                if(success){
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            loginError = null,
-                            loginSuccess = true
-                        )
-                    }
-                }else{
-
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            loginError = "Credenciales incorrectas",
-                            loginSuccess = false
-                        )
-                    }
-                }
-
-                /*
                 val result = loginUseCase(
                     email = _uiState.value.email,
                     password = _uiState.value.password
@@ -100,6 +87,18 @@ class LoginViewModel(
 
                 result.fold(
                     onSuccess = { user ->
+
+                        // Guardar datos de la sesión
+                        sessionManager.saveSession(
+                            userId = user.id,
+                            email = user.email,
+                            name = user.nombreCompleto
+                        )
+
+
+                        // Registrar token FCM
+                        registrarTokenFCM(user.id)
+
                         _uiState.update {
                             it.copy(
                                 isLoading = false,
@@ -116,10 +115,6 @@ class LoginViewModel(
                         }
                     }
                 )
-
-                 */
-
-
             } catch (e: Exception) {
                 _uiState.update {
                     it.copy(
@@ -131,7 +126,29 @@ class LoginViewModel(
         }
     }
 
-    fun clearError() {
-        _uiState.update { it.copy(loginError = null) }
+    private fun registrarTokenFCM(userId: Int) {
+        viewModelScope.launch {
+            try {
+                FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+                    if (task.isSuccessful) {
+                        val fcmToken = task.result
+                        if (fcmToken != null) {
+                            viewModelScope.launch {
+                                ApiClient.registrarToken(
+                                    usuarioId = userId,
+                                    token = fcmToken,
+                                    dispositivo = "android"
+                                )
+                                println("✓ Token FCM registrado")
+                            }
+                        }
+                    } else {
+                        println("✗ Error obteniendo token FCM: ${task.exception?.message}")
+                    }
+                }
+            } catch (e: Exception) {
+                println("✗ Error registrando token FCM: ${e.message}")
+            }
+        }
     }
 }
