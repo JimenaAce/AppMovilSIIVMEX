@@ -3,6 +3,7 @@ package com.example.appmovilsiivmex.ui.screens.vehicle
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.appmovilsiivmex.domain.usecase.PlateRegion
 import com.example.appmovilsiivmex.domain.usecase.ValidatePlateUseCase
 import com.example.appmovilsiivmex.domain.usecase.VehicleRegisterUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -55,20 +56,42 @@ class VehicleViewModel @Inject constructor(
         val plate = _uiState.value.plate
         val validPlate = validatePlateUseCase(plate)
 
+        val regionString: String? =
+            if (validPlate.isValid) {
+                when (validPlate.region) {
+                    PlateRegion.CDMX -> "CDMX"
+                    PlateRegion.EDOMEX -> "EDOMEX"
+                    null -> null
+                }
+            } else null
+
         _uiState.update {
             it.copy(
-                plateError = if( !validPlate.isValid && plate.isNotBlank()) validPlate.message else null
+                plateError = if( !validPlate.isValid && plate.isNotBlank()) validPlate.message else null,
+                region = regionString
             )
         }
     }
 
     fun onRegisterVehicle(email: String) {
         viewModelScope.launch {
+
+            val region = _uiState.value.region
+            if (region.isNullOrBlank()){
+                _uiState.update {
+                    it.copy(
+                        plateError = "La placa debe corresponder a CDMX o EDOMEX antes de registrar el vehículo."
+                    )
+                }
+
+                return@launch
+            }
+
             _uiState.update { it.copy(isLoading = true) }
 
             try{
 
-                Log.d("RegistroVehiculo", "El email es: $email")
+                Log.d("RegistroVehiculo", "El email es: $email y la región es: ${region}" )
 
                 val result = vehicleRegisterUseCase(
                     email = email,
@@ -76,7 +99,8 @@ class VehicleViewModel @Inject constructor(
                     carName = _uiState.value.carName,
                     year = _uiState.value.year.toIntOrNull(),
                     brand = _uiState.value.brand,
-                    hologram = _uiState.value.hologram
+                    hologram = _uiState.value.hologram,
+                    entidad_registro = region
                 )
 
                 result.fold(

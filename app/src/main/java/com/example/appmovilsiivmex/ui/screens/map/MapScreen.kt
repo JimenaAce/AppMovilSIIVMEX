@@ -8,27 +8,37 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BrokenImage
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.appmovilsiivmex.R
 import com.example.appmovilsiivmex.domain.model.VehicleDetection
@@ -48,7 +58,8 @@ fun MapScreen(
     val context = LocalContext.current
     val state by viewModel.mapState.collectAsState()
 
-    val vehicleId = 3  // luego lo puedes recibir como parámetro
+    val selectedVehicleId = state.selectedVehicleId
+
 
     var selectedDetection by remember { mutableStateOf<VehicleDetection?>(null) }
     var pendingDetection by remember { mutableStateOf<VehicleDetection?>(null) }
@@ -56,8 +67,10 @@ fun MapScreen(
     // Trigger para poder volver a hacer zoom aunque sea el mismo marcador
     var clickTrigger by remember { mutableIntStateOf(0) }
 
-    LaunchedEffect(vehicleId) {
-        viewModel.loadDetections(vehicleId)
+    LaunchedEffect(selectedVehicleId) {
+        selectedVehicleId?.let { id ->
+            viewModel.loadDetections(id)
+        }
     }
 
     val mapView = remember {
@@ -221,21 +234,12 @@ fun DetectionBottomCard(
 
     // Imagen a pantalla completa
     if (showFullImage && !detection.imagenBase64.isNullOrBlank()) {
-        Dialog(onDismissRequest = { showFullImage = false }) {
-            Box(
-                Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.95f))
-                    .clickable { showFullImage = false },
-                contentAlignment = Alignment.Center
-            ) {
-                DetectionImageFromBase64(
-                    base64 = detection.imagenBase64,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Fit
-                )
-            }
-        }
+        FullScreenDetectionViewer(
+            base64 = detection.imagenBase64,
+            onDismiss = { showFullImage = false },
+            title = detection.ubicacion ?: "Detección",
+            subtitle = formatFechaHora(detection.fechaHora)
+        )
     }
 
     // Card flotante
@@ -320,19 +324,9 @@ fun DetectionBottomCard(
                     // Botones
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        Alignment.CenterVertically
                     ) {
-
-                        ElevatedButton(
-                            onClick = { /* TODO: ver ruta */ },
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(50.dp),
-                            contentPadding = PaddingValues(vertical = 6.dp)
-                        ) {
-                            Text("Ver ruta", style = MaterialTheme.typography.labelLarge)
-                        }
-
-                        Spacer(Modifier.width(8.dp))
 
                         OutlinedButton(
                             onClick = onClose,
@@ -351,6 +345,219 @@ fun DetectionBottomCard(
         }
     }
 }
+
+@Composable
+fun FullScreenDetectionViewer(
+    base64: String,
+    onDismiss: () -> Unit,
+    title: String? = null,
+    subtitle: String? = null
+) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(
+            usePlatformDefaultWidth = false,
+            dismissOnClickOutside = true
+        )
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            Color(0xCC020617),
+                            Color(0xE6000000)
+                        )
+                    )
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            // Cerrar tocando fondo
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .clickable(onClick = onDismiss),
+            )
+
+            // Contenedor principal de la imagen + info
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 18.dp, vertical = 18.dp),
+                verticalArrangement = Arrangement.SpaceBetween
+            ) {
+
+                // Top bar
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        if (!title.isNullOrBlank()) {
+                            Text(
+                                text = title,
+                                style = MaterialTheme.typography.titleMedium,
+                                color = Color.White
+                            )
+                        }
+                        if (!subtitle.isNullOrBlank()) {
+                            Text(
+                                text = subtitle,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color(0xFFE5E7EB)
+                            )
+                        }
+                    }
+                    IconButton(
+                        onClick = onDismiss,
+                        modifier = Modifier
+                            .size(36.dp)
+                            .background(
+                                Color(0x660F172A),
+                                shape = CircleShape
+                            )
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Cerrar",
+                            tint = Color.White
+                        )
+
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Imagen centrada
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .wrapContentHeight()
+                            .aspectRatio(4f / 3f, matchHeightConstraintsFirst = false),
+                        shape = RoundedCornerShape(20.dp),
+                        tonalElevation = 8.dp,
+                        shadowElevation = 12.dp,
+                        color = Color(0xFF020617)
+                    ) {
+                        ZoomableDetectionImageFromBase64(
+                            base64 = base64,
+                            modifier = Modifier.fillMaxSize(),
+                            maxScale = 4f
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class, ExperimentalFoundationApi::class)
+@Composable
+fun ZoomableDetectionImageFromBase64(
+    base64: String?,
+    modifier: Modifier = Modifier,
+    maxScale: Float = 4f
+) {
+    if (base64.isNullOrBlank()) {
+        // fallback igual que antes
+        Box(
+            modifier = modifier
+                .background(Color(0xFFE2E8F0)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Default.Image,
+                contentDescription = null,
+                tint = Color(0xFF64748B)
+            )
+        }
+        return
+    }
+
+    // Decodificar la imagen una vez
+    val imageBitmap by remember(base64) {
+        mutableStateOf(
+            try {
+                val bytes = Base64.decode(base64, Base64.DEFAULT)
+                val bmp = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+                bmp?.asImageBitmap()
+            } catch (e: Exception) {
+                null
+            }
+        )
+    }
+
+    if (imageBitmap == null) {
+        Box(
+            modifier = modifier
+                .background(Color(0xFFE2E8F0)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Default.BrokenImage,
+                contentDescription = null,
+                tint = Color(0xFF64748B)
+            )
+        }
+        return
+    }
+
+    // Estado de zoom y desplazamiento
+    var scale by remember { mutableFloatStateOf(1f) }
+    var offset by remember { mutableStateOf(Offset.Zero) }
+
+    Box(
+        modifier = modifier
+            .combinedClickable(
+                onClick = { /* no-op: ya cierras con el botón X afuera */ },
+                onDoubleClick = {
+                    // reset de zoom y posición
+                    scale = 1f
+                    offset = Offset.Zero
+                }
+            )
+            .pointerInput(Unit) {
+                detectTransformGestures { _, pan, zoom, _ ->
+                    // actualizar zoom
+                    val newScale = (scale * zoom).coerceIn(1f, maxScale)
+                    // ajustar pan solo cuando hay zoom
+                    val newOffset =
+                        if (newScale > 1f) offset + pan else Offset.Zero
+
+                    scale = newScale
+                    offset = newOffset
+                }
+            }
+    ) {
+        Image(
+            bitmap = imageBitmap!!,
+            contentDescription = null,
+            modifier = Modifier
+                .fillMaxSize()
+                .graphicsLayer(
+                    scaleX = scale,
+                    scaleY = scale,
+                    translationX = offset.x,
+                    translationY = offset.y
+                ),
+            contentScale = ContentScale.Fit
+        )
+    }
+}
+
+
 
 @Composable
 fun DetectionImageFromBase64(

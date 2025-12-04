@@ -32,7 +32,6 @@ fun NotificacionesconDrawerScreen(
     ) {
         NotificacionesScreen(
             navController = navController,
-            userId = 7,
             onMenuClick = {
                 scope.launch { drawerState.open() }
             }

@@ -9,6 +9,8 @@ import com.example.appmovilsiivmex.domain.usecase.LoginUseCase
 import com.example.appmovilsiivmex.domain.usecase.MarkNotificationReadUseCase
 import com.example.appmovilsiivmex.domain.usecase.RegisterUseCase
 import com.example.appmovilsiivmex.domain.usecase.ForgotPasswordUseCase
+import com.example.appmovilsiivmex.domain.usecase.ResendEmailResetUseCase
+import com.example.appmovilsiivmex.domain.usecase.ResendEmailUseCase
 import com.example.appmovilsiivmex.domain.usecase.ValidateEmailUseCase
 import com.example.appmovilsiivmex.domain.usecase.ValidatePasswordUseCase
 import com.example.appmovilsiivmex.domain.usecase.ValidatePlateUseCase
@@ -53,6 +55,14 @@ object UseCaseModule {
 
     @Provides
     @ViewModelScoped
+    fun provideResendEmailUseCase(
+        repository: AuthRepository
+    ): ResendEmailUseCase {
+        return ResendEmailUseCase(repository)
+    }
+
+    @Provides
+    @ViewModelScoped
     fun provideForgotPasswordUseCase(
         repository: AuthRepository
     ): ForgotPasswordUseCase {
@@ -65,6 +75,14 @@ object UseCaseModule {
         repository: AuthRepository
     ): VerifyEmailResetUseCase {
         return VerifyEmailResetUseCase(repository)
+    }
+
+    @Provides
+    @ViewModelScoped
+    fun provideResendEmailResetUseCase(
+        repository: AuthRepository
+    ): ResendEmailResetUseCase {
+        return ResendEmailResetUseCase(repository)
     }
 
     @Provides

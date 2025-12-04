@@ -32,11 +32,11 @@ import java.util.Locale
 @Composable
 fun NotificacionesScreen(
     navController: NavController,
-    userId: Int = 8, // luego lo sacas de tu SessionManag-er
     onMenuClick: () -> Unit = {},
     viewModel: NotificationsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val userId = uiState.userId
 
     LaunchedEffect(userId) {
         viewModel.loadNotifications(userId)

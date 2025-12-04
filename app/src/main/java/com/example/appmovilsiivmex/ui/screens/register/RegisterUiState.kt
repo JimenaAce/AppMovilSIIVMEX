@@ -16,5 +16,6 @@ data class RegisterUiState(
     // Errores
     val emailError: String? = null,
     val passwordError: String? = null,
-    val confirmError: String? = null
+    val confirmError: String? = null,
+    val registerError: String? = null
 )

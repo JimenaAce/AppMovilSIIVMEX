@@ -1,20 +1,25 @@
 package com.example.appmovilsiivmex.data.repository
 
 import com.example.appmovilsiivmex.data.remote.ApiClient
+import com.example.appmovilsiivmex.data.remote.dto.LoginResult
 import com.example.appmovilsiivmex.data.remote.dto.toDomain
 import com.example.appmovilsiivmex.domain.model.User
 import com.example.appmovilsiivmex.domain.repository.AuthRepository
 
 class AuthRepositoryImpl : AuthRepository {
 
-    override suspend fun login(email: String, password: String): Result<User> {
+    override suspend fun login(email: String, password: String): Result<LoginResult> {
         return try {
             val response = ApiClient.login(email, password)
 
             response.fold(
                 onSuccess = { loginResponse ->
                     if (loginResponse.success && loginResponse.user != null) {
-                        Result.success(loginResponse.user.toDomain())
+                        val loginResult = LoginResult(
+                            user = loginResponse.user.toDomain(),
+                            vehicles = loginResponse.vehicles.map { it.toDomain() }
+                        )
+                        Result.success(loginResult)
                     } else {
                         Result.failure(Exception(loginResponse.message))
                     }
@@ -136,6 +141,29 @@ class AuthRepositoryImpl : AuthRepository {
                 }
             )
 
+        } catch (e: Exception){
+            Result.failure(Exception("Error de conexión: ${e.message}"))
+        }
+    }
+
+    override suspend fun resendEmailReset(email: String): Result<Unit> {
+
+        return try{
+            val response = ApiClient.reenviarCorreoRestablecer(email)
+            response.fold(
+                onSuccess = { resendEmailResetResponse ->
+
+                    if(resendEmailResetResponse.success){
+                        Result.success(Unit)
+                    }else{
+                        Result.failure(Exception(resendEmailResetResponse.message))
+                    }
+
+                },
+                onFailure = { error ->
+                    Result.failure(error)
+                }
+            )
         } catch (e: Exception){
             Result.failure(Exception("Error de conexión: ${e.message}"))
         }

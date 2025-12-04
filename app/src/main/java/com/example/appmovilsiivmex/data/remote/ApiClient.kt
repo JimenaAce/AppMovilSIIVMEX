@@ -8,6 +8,7 @@ import com.example.appmovilsiivmex.data.remote.dto.NotificationsResponse
 import com.example.appmovilsiivmex.data.remote.dto.RegisterResponse
 import com.example.appmovilsiivmex.data.remote.dto.ResendEmailResponse
 import com.example.appmovilsiivmex.data.remote.dto.ForgotPasswordResponse
+import com.example.appmovilsiivmex.data.remote.dto.ResendEmailResetResponse
 import com.example.appmovilsiivmex.data.remote.dto.UnreadCountResponse
 import com.example.appmovilsiivmex.data.remote.dto.UserDto
 import com.example.appmovilsiivmex.data.remote.dto.VehicleDetectionDto
@@ -27,7 +28,7 @@ import org.json.JSONObject
 import java.util.concurrent.TimeUnit
 
 object ApiClient {
-    private const val BASE_URL = "https://9ceed31c6110.ngrok-free.app"
+    private const val BASE_URL = "https://83d01df19734.ngrok-free.app"
 
     private val client = OkHttpClient.Builder()
         .connectTimeout(30, TimeUnit.SECONDS)
@@ -54,21 +55,45 @@ object ApiClient {
                         val responseBody = response.body?.string()
                         val jsonObject = JSONObject(responseBody ?: "{}")
 
+                        val userDto = if (jsonObject.has("user")) {
+                            val userObj = jsonObject.getJSONObject("user")
+                            UserDto(
+                                id = userObj.getInt("id"),
+                                email = userObj.getString("email"),
+                                nombreCompleto = userObj.getString("nombre_completo")
+                            )
+                        } else null
+
+                        // Vehiculos
+                        val vehiclesList = mutableListOf<VehicleDto>()
+                        val vehiclesJsonArray = jsonObject.optJSONArray("vehicles")
+
+                        if (vehiclesJsonArray != null) {
+                            for (i in 0 until vehiclesJsonArray.length()) {
+                                val vehicleObj = vehiclesJsonArray.getJSONObject(i)
+                                val vehicle = VehicleDto(
+                                    id = vehicleObj.getInt("id"),
+                                    usuario_id = vehicleObj.getInt("usuario_id"),
+                                    placa = vehicleObj.getString("placa"),
+                                    nombre_vehiculo = vehicleObj.getString("nombre_vehiculo"),
+                                    marca = vehicleObj.optString("marca", null),
+                                    anio = if (vehicleObj.isNull("anio")) null else vehicleObj.getInt("anio"),
+                                    holograma = vehicleObj.getString("holograma"),
+                                    entidad_registro = vehicleObj.getString("entidad_registro")
+                                )
+                                vehiclesList.add(vehicle)
+                            }
+                        }
+
                         val loginResponse = LoginResponse(
                             success = jsonObject.getBoolean("success"),
                             message = jsonObject.getString("message"),
                             token = jsonObject.optString("token", ""),
-                            user = if (jsonObject.has("user")) {
-                                val userObj = jsonObject.getJSONObject("user")
-                                UserDto(
-                                    id = userObj.getInt("id"),
-                                    email = userObj.getString("email"),
-                                    nombreCompleto = userObj.getString("nombre_completo")
-                                )
-                            } else null
+                            user = userDto,
+                            vehicles = vehiclesList
                         )
-
                         Result.success(loginResponse)
+
                     } else {
                         val errorBody = response.body?.string()
                         val errorJson = JSONObject(errorBody ?: "{}")
@@ -80,6 +105,7 @@ object ApiClient {
                 Result.failure(e)
             }
         }
+
 
     // Registro de token
     suspend fun registrarToken(usuarioId: Int, token: String, dispositivo: String = "android"): Boolean =
@@ -247,6 +273,43 @@ object ApiClient {
             }
         }
 
+    // Reenvio de código de verificación
+    suspend fun reenviarCorreoRestablecer(email: String): Result<ResendEmailResetResponse> =
+        withContext(Dispatchers.IO) {
+            try {
+                val body = """{"email": "$email"}"""
+                    .toRequestBody(json)
+
+                val request = Request.Builder()
+                    .url("$BASE_URL/api/password/resend-verification")
+
+                    .post(body)
+                    .build()
+
+                client.newCall(request).execute().use { response ->
+                    if (response.isSuccessful) {
+                        val responseBody = response.body?.string()
+                        val jsonObject = JSONObject(responseBody ?: "{}")
+
+                        val resendEmailResetResponse = ResendEmailResetResponse(
+                            success = jsonObject.optBoolean("success", false),
+                            message = jsonObject.optString("message", "Respuesta desconocida")
+                        )
+
+                        Result.success(resendEmailResetResponse)
+
+                    } else {
+                        val errorBody = response.body?.string()
+                        val errorJson = JSONObject(errorBody ?: "{}")
+                        val errorMsg = errorJson.optString("message", "Error al registrar usuario")
+                        Result.failure(Exception(errorMsg))
+                    }
+                }
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        }
+
     // Verificación de correo
     suspend fun verificarCorreoReestablecer(email: String, code: String): Result<VerifyEmailResetResponse> =
         withContext(Dispatchers.IO) {
@@ -320,15 +383,13 @@ object ApiClient {
         }
 
     // Registro de carro
-    // De momento dejar email, después cambiar por id_usuario
-    // Agregar el campo para la entidad federativa
-    suspend fun registrarVehiculo(email: String, carName:String, plate: String, brand: String, year: Int?, hologram: String): Result<VehicleRegisterResponse> =
+    suspend fun registrarVehiculo(email: String, carName:String, plate: String, brand: String, year: Int?, hologram: String, entidad_registro: String): Result<VehicleRegisterResponse> =
         withContext(Dispatchers.IO) {
             try {
 
                 val yearPart = year?.toString() ?: "null"
 
-                val body = """{"email": "$email", "nombre_vehiculo": "$carName", "placa": "$plate", "marca": "$brand", "anio": $yearPart, "holograma": "$hologram"}"""
+                val body = """{"email": "$email", "nombre_vehiculo": "$carName", "placa": "$plate", "marca": "$brand", "anio": $yearPart, "holograma": "$hologram", "entidad_registro": "$entidad_registro"}"""
                     .toRequestBody(json)
 
                 val request = Request.Builder()

@@ -6,6 +6,7 @@ data class MapUiState(
 
     val isLoading: Boolean = false,
     val detections: List<VehicleDetection> = emptyList(),
+    val selectedVehicleId: Int? = null,
 
     // Errores
     val error: String? = null

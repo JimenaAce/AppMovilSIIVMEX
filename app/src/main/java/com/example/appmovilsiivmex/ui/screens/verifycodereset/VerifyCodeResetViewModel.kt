@@ -4,7 +4,7 @@ package com.example.appmovilsiivmex.ui.screens.verifycodereset
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.appmovilsiivmex.data.remote.ApiClient
+import com.example.appmovilsiivmex.domain.usecase.ResendEmailResetUseCase
 import com.example.appmovilsiivmex.domain.usecase.VerifyEmailResetUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -18,7 +18,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class VerifyCodeResetViewModel @Inject constructor(
-    private val verifyEmailResetUseCase: VerifyEmailResetUseCase
+    private val verifyEmailResetUseCase: VerifyEmailResetUseCase,
+    private val resendEmailResetUseCase: ResendEmailResetUseCase
 ) : ViewModel() {
 
     companion object {
@@ -60,20 +61,21 @@ class VerifyCodeResetViewModel @Inject constructor(
         if (_uiState.value.resendSeconds != 0) return
 
         viewModelScope.launch {
-            val result = ApiClient.reenviarCorreo(email)
+
+            val result = resendEmailResetUseCase(email)
             result.fold(
                 onSuccess = { reenvio ->
                     _uiState.update {
                         it.copy(isLoading = false)
                     }
-                    Log.d("VERIFY_CODE", "Reenvio exitoso: ${reenvio.message}")
+                    Log.d("VERIFY_CODE_RESET", "Reenvio exitoso: ${reenvio}")
                     startResendCountDown()
                 },
                 onFailure = { error ->
                     _uiState.update {
                         it.copy(isLoading = false)
                     }
-                    Log.d("VERIFY_CODE", "Al reenviar el código tenemos el error: ${error.message}")
+                    Log.d("VERIFY_CODE_RESET", "Al reenviar el código tenemos el error: ${error.message}")
                 }
             )
         }

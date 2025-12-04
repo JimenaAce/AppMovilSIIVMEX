@@ -97,7 +97,7 @@ class RegisterViewModel @Inject constructor(
                         _uiState.update {
                             it.copy(
                                 isLoading = false,
-                                // Poner el error del registro manejar uno genérico como "Error de conexión"
+                                registerError = "Error de conexión: ${error.message}"
                             )
                         }
                     }
@@ -109,7 +109,7 @@ class RegisterViewModel @Inject constructor(
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        // Enviar error de conexión
+                        registerError = "Error de conexión: ${e.message}"
                     )
                 }
             }

@@ -85,19 +85,34 @@ class LoginViewModel @Inject constructor(
                     password = _uiState.value.password
                 )
 
-                result.fold(
-                    onSuccess = { user ->
 
-                        // Guardar datos de la sesión
+                result.fold(
+                    onSuccess = { loginResult->
+
+
+                        val selectedId = loginResult.vehicles.firstOrNull()?.id
+
                         sessionManager.saveSession(
-                            userId = user.id,
-                            email = user.email,
-                            name = user.nombreCompleto
+                            userId = loginResult.user.id,
+                            email = loginResult.user.email,
+                            name = loginResult.user.nombreCompleto,
+                            vehicles = loginResult.vehicles,
+                            selectedVehicleId = selectedId
                         )
 
 
+                        /*
+                        // Guardar datos de la sesión
+                        sessionManager.saveSession(
+                            userId = loginResult.user.id,
+                            email = loginResult.user.email,
+                            name = loginResult.user.nombreCompleto
+                        )
+                         */
+
+
                         // Registrar token FCM
-                        registrarTokenFCM(user.id)
+                        registrarTokenFCM(loginResult.user.id)
 
                         _uiState.update {
                             it.copy(

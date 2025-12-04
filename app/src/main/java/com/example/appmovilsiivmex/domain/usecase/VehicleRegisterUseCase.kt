@@ -7,7 +7,7 @@ class VehicleRegisterUseCase(
     private val repository: VehicleRepository
 ){
 
-    suspend operator fun invoke(email:String, carName:String, plate:String, brand:String, year:Int?, hologram:String): Result<Vehicle> {
+    suspend operator fun invoke(email:String, carName:String, plate:String, brand:String, year:Int?, hologram:String, entidad_registro: String): Result<Vehicle> {
 
         // Validaciones previas
         if (carName.isBlank()) {
@@ -26,7 +26,7 @@ class VehicleRegisterUseCase(
             return Result.failure(Exception("El holograma es requerido"))
         }
 
-        return repository.registerVehicle(email, carName, plate, brand, year, hologram)
+        return repository.registerVehicle(email, carName, plate, brand, year, hologram, entidad_registro)
     }
 
 }

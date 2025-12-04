@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.appmovilsiivmex.data.remote.ApiClient
+import com.example.appmovilsiivmex.domain.usecase.ResendEmailUseCase
 import com.example.appmovilsiivmex.domain.usecase.VerifyEmailUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
@@ -17,7 +18,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class VerifyCodeViewModel @Inject constructor(
-    private val verifyEmailUseCase: VerifyEmailUseCase
+    private val verifyEmailUseCase: VerifyEmailUseCase,
+    private val resendEmailUseCase: ResendEmailUseCase
 ) : ViewModel() {
 
     companion object {
@@ -52,15 +54,16 @@ class VerifyCodeViewModel @Inject constructor(
     }
 
     fun resendCode(email: String) {
-        // Solo permitir reenviar cuando llegue a 0
+
         if (_uiState.value.resendSeconds != 0) return
 
         viewModelScope.launch {
 
-            val result = ApiClient.reenviarCorreo(email)
+            //val result = ApiClient.reenviarCorreo(email)
+            val result = resendEmailUseCase(email)
             result.fold(
 
-                onSuccess = { reenvio->
+                onSuccess = {reenvio ->
 
                     _uiState.update {
                         it.copy(
@@ -68,7 +71,7 @@ class VerifyCodeViewModel @Inject constructor(
                             // Emplear error en caso de que no se pueda
                         )
                     }
-                    Log.d("VERIFY_CODE", "Reenvio exitoso: ${reenvio.message}")
+                    Log.d("VERIFY_CODE", "Reenvio exitoso: ${reenvio}")
                     startResendCountDown()
                 },
                 onFailure = { error ->

@@ -3,6 +3,7 @@ package com.example.appmovilsiivmex.ui.screens.notification
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.appmovilsiivmex.data.local.SessionManager
 import com.example.appmovilsiivmex.domain.usecase.GetNotificationsUseCase
 import com.example.appmovilsiivmex.domain.usecase.MarkNotificationReadUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -15,11 +16,34 @@ import javax.inject.Inject
 @HiltViewModel
 class NotificationsViewModel @Inject constructor(
     private val getNotificationsUseCase: GetNotificationsUseCase,
-    private val markNotificationReadUseCase: MarkNotificationReadUseCase
+    private val markNotificationReadUseCase: MarkNotificationReadUseCase,
+    private val sessionManager: SessionManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(NotificationsUiState())
     val uiState: StateFlow<NotificationsUiState> = _uiState
+
+    init {
+
+        viewModelScope.launch {
+            try {
+                var userId = sessionManager.getUserId()
+
+                if (userId == null) {
+                    userId = 0
+                }
+
+                _uiState.value = _uiState.value.copy(
+                    userId = userId
+                )
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    error = "Error obteniendo vehículo seleccionado"
+                )
+            }
+        }
+
+    }
 
     fun loadNotifications(userId: Int) {
         viewModelScope.launch {
@@ -27,6 +51,8 @@ class NotificationsViewModel @Inject constructor(
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
 
             try {
+
+                Log.d("NOTIFICACIONES", "El resultado userID es: $userId")
 
                 val result = getNotificationsUseCase(userId = userId)
 

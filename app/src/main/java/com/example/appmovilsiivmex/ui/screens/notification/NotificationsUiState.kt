@@ -6,7 +6,7 @@ import com.example.appmovilsiivmex.domain.model.Notification
 data class NotificationsUiState(
     val isLoading: Boolean = false,
     val notifications: List<Notification> = emptyList(),
-
+    val userId: Int = 0,
     // Errores
     val error: String? = null
 )

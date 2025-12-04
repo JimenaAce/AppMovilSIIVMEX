@@ -8,9 +8,9 @@ import com.example.appmovilsiivmex.domain.repository.VehicleRepository
 
 class VehicleRepositoryImpl: VehicleRepository {
 
-    override suspend fun registerVehicle(email: String, carName: String, plate: String, brand: String, year: Int?, hologram: String): Result<Vehicle> {
+    override suspend fun registerVehicle(email: String, carName: String, plate: String, brand: String, year: Int?, hologram: String, entidad_registro: String): Result<Vehicle> {
         return try{
-            val response = ApiClient.registrarVehiculo(email, carName, plate, brand, year, hologram)
+            val response = ApiClient.registrarVehiculo(email, carName, plate, brand, year, hologram, entidad_registro)
             response.fold(
                 onSuccess = { vehicleRegisterResponse ->
                     if(vehicleRegisterResponse.success && vehicleRegisterResponse.vehicle != null){

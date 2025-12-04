@@ -115,6 +115,16 @@ fun RegisterScreen(
                 onCheckedChange = { acceptedTerms = it },
                 onClickTerms = { showTermsDialog = true }
             )
+            if (uiState.registerError != null) {
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = uiState.registerError ?: "",
+                    color = MaterialTheme.colorScheme.error,
+                    fontSize = 14.sp,
+                    textAlign = TextAlign.Start,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
             Spacer(Modifier.height(24.dp))
 
             PrimaryButton(
