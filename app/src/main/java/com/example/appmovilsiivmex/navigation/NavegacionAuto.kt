@@ -1,6 +1,8 @@
 package com.example.appmovilsiivmex.navigation
 
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -9,24 +11,23 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navigation
+import com.example.appmovilsiivmex.ui.screens.AddVehicleScreen
 import com.example.appmovilsiivmex.ui.screens.CalendarioHoyNoCirculaScreen
 import com.example.appmovilsiivmex.ui.screens.CalendarioVerificacionScreen
 import com.example.appmovilsiivmex.ui.screens.HoyNoCirculaScreen
 import com.example.appmovilsiivmex.ui.screens.MisVehiculosScreen
 import com.example.appmovilsiivmex.ui.screens.PanelScreen
 import com.example.appmovilsiivmex.ui.screens.PantallaPlaceholder
-
-// mis pantallas nuevas
 import com.example.appmovilsiivmex.ui.screens.InicioScreen
-import com.example.appmovilsiivmex.ui.screens.EditarVehiculoScreen
-import com.example.appmovilsiivmex.ui.screens.MiAutoConDrawerScreen
+import com.example.appmovilsiivmex.ui.screens.MiAutoScreen
 import com.example.appmovilsiivmex.ui.screens.MultasconDrawerScreen
-import com.example.appmovilsiivmex.ui.screens.NotificacionesconDrawerScreen
+import com.example.appmovilsiivmex.ui.screens.editvehicle.EditVehicleScreen
 import com.example.appmovilsiivmex.ui.screens.forgotpassword.ForgotPasswordFlowViewModel
 import com.example.appmovilsiivmex.ui.screens.forgotpassword.ForgotPasswordScreen
 import com.example.appmovilsiivmex.ui.screens.login.LoginScreen
 import com.example.appmovilsiivmex.ui.screens.map.MapScreen
 import com.example.appmovilsiivmex.ui.screens.newpassword.CreateNewPasswordScreen
+import com.example.appmovilsiivmex.ui.screens.notification.NotificacionesScreen
 import com.example.appmovilsiivmex.ui.screens.passwordreset.PasswordResetSuccessScreen
 import com.example.appmovilsiivmex.ui.screens.register.RegisterScreen
 import com.example.appmovilsiivmex.ui.screens.register.RegistroFlowViewModel
@@ -34,16 +35,21 @@ import com.example.appmovilsiivmex.ui.screens.vehicle.VehicleAddScreen
 import com.example.appmovilsiivmex.ui.screens.verifycode.VerifyCodeScreen
 import com.example.appmovilsiivmex.ui.screens.verifycodereset.VerifyCodeResetScreen
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun NavegacionAuto(
     controladorNavegacion: NavHostController,
     paddingValues: PaddingValues,
     startDestination: String = "inicio_sesion"
 ) {
+
+
     NavHost(
         navController = controladorNavegacion,
         startDestination = startDestination
     ) {
+
+
 
         // ─────────────────────
         // INICIO DE SESIÓN
@@ -122,6 +128,7 @@ fun NavegacionAuto(
 
                 VehicleAddScreen(
                     email = registroFlowViewModel.email.orEmpty(),
+                    updateSession = false,
                     onBack = {
                         controladorNavegacion.popBackStack()
                     },
@@ -237,20 +244,39 @@ fun NavegacionAuto(
         }
 
         // ─────────────────────
-        // MENÚ LATERAL (venían del main)
+        // INICIO
         // ─────────────────────
+        composable("inicio") {
+            InicioScreen(navController = controladorNavegacion)
+        }
+
+        // ─────────────────────
+        // MENÚ LATERAL
+        // ─────────────────────
+
+        // AGREGAR VEHÍCULO
+        composable("agregar_vehiculo") {
+            AddVehicleScreen(
+                email = LocalUserEmail.current,
+                onBack = { controladorNavegacion.popBackStack() },
+                onSuccess = {
+                    controladorNavegacion.popBackStack()
+                }
+            )
+        }
+
         composable("mis_vehiculos") {
             MisVehiculosScreen(controladorNavegacion)
         }
         composable("cal_verificacion") {
-            CalendarioVerificacionScreen(controladorNavegacion)
+            CalendarioVerificacionScreen(onBack = { controladorNavegacion.popBackStack() })
         }
         composable("cal_hoy_no_circula") {
-            CalendarioHoyNoCirculaScreen(controladorNavegacion)
+            CalendarioHoyNoCirculaScreen(onBack = { controladorNavegacion.popBackStack() })
         }
 
         // ─────────────────────
-        // BOTTOM / PANEL (venía del main)
+        // NAVEGACIÓN INFERIOR
         // ─────────────────────
         composable("panel") {
             PanelScreen(controladorNavegacion)
@@ -258,58 +284,43 @@ fun NavegacionAuto(
         composable("multas") {
             MultasconDrawerScreen(navController = controladorNavegacion)
         }
-
-        composable("mi_verificacion") {
-            PantallaPlaceholder("Verificación")
-        }
-        composable("hoy_no_circula") {
-            HoyNoCirculaScreen()
-        }
         composable("ubicacion") {
-            //PantallaPlaceholder
-            //VehicleMapScreen()
             MapScreen()
         }
-
-        // ─────────────────────
-        // RUTAS QUE EN MAIN ERAN PLACEHOLDER
-        // PERO YA TENEMOS PANTALLA REAL
-        // ─────────────────────
         composable("mi_auto") {
-            MiAutoConDrawerScreen(navController = controladorNavegacion)
+            MiAutoScreen(controladorNavegacion)
         }
 
 
+        // ─────────────────────
+        // EDITAR VEHÍCULO
+        // ─────────────────────
         composable("editar_vehiculo") {
-            EditarVehiculoScreen(
-                navController = controladorNavegacion,
-                placaInicial = "NVW1118",
-                marcaInicial = "Volkswagen",
-                nombreInicial = "Vehículo",
-                anioInicial = "2019",
-                hologramaInicial = "0",
-                onSave = { _, _, _, _, _ ->
-                    // aquí luego guardamos en BD
+            EditVehicleScreen(
+                onBack = { controladorNavegacion.popBackStack() },
+                onSubmit = {
+                    controladorNavegacion.popBackStack()
                 }
             )
         }
 
         // ─────────────────────
-        // MIS RUTAS NUEVAS
+        // Notificaciones
         // ─────────────────────
-        composable("inicio") {
-            InicioScreen(navController = controladorNavegacion)
-        }
-
         composable("notificaciones") {
-            NotificacionesconDrawerScreen(navController = controladorNavegacion)
+            NotificacionesScreen(
+                onBack = { controladorNavegacion.popBackStack() }
+            )
+        }
+        composable("mi_verificacion") {
+            PantallaPlaceholder("Verificación")
+        }
+        composable("hoy_no_circula") {
+            HoyNoCirculaScreen(
+                onBack = { controladorNavegacion.popBackStack() },
+                openCalendar = { controladorNavegacion.navigate("cal_hoy_no_circula")}
+            )
         }
 
-        // ─────────────────────
-        // RUTA EXTRA DEL MAIN
-        // ─────────────────────
-        composable("agregar_vehiculo") {
-            PantallaPlaceholder("Agregar vehículo")
-        }
     }
 }

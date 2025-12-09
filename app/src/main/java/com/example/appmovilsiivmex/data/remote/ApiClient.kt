@@ -1,6 +1,7 @@
 package com.example.appmovilsiivmex.data.remote
 
 import com.example.appmovilsiivmex.data.remote.dto.ChangePasswordResponse
+import com.example.appmovilsiivmex.data.remote.dto.EditVehicleResponse
 import com.example.appmovilsiivmex.data.remote.dto.LoginResponse
 import com.example.appmovilsiivmex.data.remote.dto.MarkReadResponse
 import com.example.appmovilsiivmex.data.remote.dto.NotificationDto
@@ -28,7 +29,7 @@ import org.json.JSONObject
 import java.util.concurrent.TimeUnit
 
 object ApiClient {
-    private const val BASE_URL = "https://83d01df19734.ngrok-free.app"
+    private const val BASE_URL = "https://14873b71e968.ngrok-free.app"
 
     private val client = OkHttpClient.Builder()
         .connectTimeout(30, TimeUnit.SECONDS)
@@ -434,9 +435,59 @@ object ApiClient {
             }
         }
 
-    // ============================
+
+    suspend fun editarVehiculo(vehicleId: Int, carName:String, brand: String, year: Int?, hologram: String): Result<EditVehicleResponse> =
+        withContext(Dispatchers.IO) {
+            try {
+
+                val yearPart = year?.toString() ?: "null"
+
+                val body = """{"nombre_vehiculo": "$carName", "marca": "$brand", "anio": $yearPart, "holograma": "$hologram"}"""
+                    .toRequestBody(json)
+
+                val request = Request.Builder()
+                    .url("$BASE_URL/api/vehicles/$vehicleId")
+                    .put(body)
+                    .build()
+
+                client.newCall(request).execute().use { response ->
+                    if (response.isSuccessful) {
+                        val responseBody = response.body?.string()
+                        val jsonObject = JSONObject(responseBody ?: "{}")
+
+                        val editVehicleResponse = EditVehicleResponse(
+                            success = jsonObject.getBoolean("success"),
+                            message = jsonObject.getString("message"),
+                            vehicle = if(jsonObject.has("vehicle")){
+                                val vehicleObj = jsonObject.getJSONObject("vehicle")
+                                VehicleDto(
+                                    id = vehicleObj.getInt("id"),
+                                    usuario_id = vehicleObj.getInt("usuario_id"),
+                                    nombre_vehiculo = vehicleObj.getString("nombre_vehiculo"),
+                                    placa = vehicleObj.getString("placa"),
+                                    marca = vehicleObj.optString("marca", "Generica"),
+                                    anio = if (vehicleObj.isNull("anio")) null else vehicleObj.getInt("anio"),
+                                    holograma = vehicleObj.getString("holograma"),
+                                    entidad_registro = vehicleObj.getString("entidad_registro")
+                                )
+                            }else null
+                        )
+
+                        Result.success(editVehicleResponse)
+
+                    } else {
+                        val errorBody = response.body?.string()
+                        val errorJson = JSONObject(errorBody ?: "{}")
+                        val errorMsg = errorJson.optString("message", "Error al registrar usuario")
+                        Result.failure(Exception(errorMsg))
+                    }
+                }
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        }
+
     // Detecciones de un vehículo
-    // ============================
     suspend fun deteccionesVehiculo(vehicleId: Int): Result<VehicleDetectionResponse> =
         withContext(Dispatchers.IO) {
             try {

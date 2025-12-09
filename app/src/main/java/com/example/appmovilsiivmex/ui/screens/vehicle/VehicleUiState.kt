@@ -1,7 +1,5 @@
 package com.example.appmovilsiivmex.ui.screens.vehicle
 
-import com.example.appmovilsiivmex.domain.usecase.PlateRegion
-
 data class VehicleUiState(
     val plate: String = "",
     val carName: String = "",

@@ -1,11 +1,18 @@
 package com.example.appmovilsiivmex.ui.screens
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -13,118 +20,222 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.appmovilsiivmex.ui.screens.*
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.material.icons.filled.Block
+import androidx.compose.material.icons.filled.Check
+import com.example.appmovilsiivmex.navigation.LocalSelectedVehicleId
+import com.example.appmovilsiivmex.navigation.LocalVehicles
 import com.example.appmovilsiivmex.ui.theme.ColorAzulOscuro
 import com.example.appmovilsiivmex.ui.theme.ColorChipInactivo
-import com.example.appmovilsiivmex.ui.theme.ColorFondoTarjeta
 import com.example.appmovilsiivmex.ui.theme.ColorGrisTexto
-import com.example.appmovilsiivmex.ui.theme.ColorRosa
-import com.example.appmovilsiivmex.ui.theme.ColorVerde
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun HoyNoCirculaScreen() {
+fun HoyNoCirculaScreen(
+    onBack: () -> Unit,
+    openCalendar: () -> Unit
+) {
+    // Vehículo actual desde los CompositionLocal
+    val vehicles = LocalVehicles.current
+    val selectedVehicleId = LocalSelectedVehicleId.current
+    val selectedVehicle =
+        vehicles.firstOrNull { it.id == selectedVehicleId } ?: vehicles.firstOrNull()
+
+    val placa = selectedVehicle?.placa
+    val hologramaDb = selectedVehicle?.holograma
+
+    val verifInfo = buildVerificacionInfo(placa)
+    val hoyInfo = buildHoyNoCirculaInfo(placa, hologramaDb)
+    val restringidoHoy = tieneRestriccionHoy(placa, hologramaDb)
+
+    // Para saber cuál chip de holograma marcar
+    val hologramaUi = when {
+        hologramaDb == null -> ""
+        hologramaDb.equals("Exento", true) -> "E"
+        else -> hologramaDb
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .background(Color.White)
+            .statusBarsPadding()
+            .padding(horizontal = 16.dp, vertical = 12.dp)
     ) {
-        EncabezadoHoyNoCircula()
+        // Encabezado
+        EncabezadoHoyNoCircula(
+            onBack = onBack,
+            onOpenCalendar = openCalendar
+        )
+
         Spacer(modifier = Modifier.height(24.dp))
-        TarjetaInformativa()
+
+        // Tarjeta grande con info de hoy
+        TarjetaInformativa(
+            verifInfo = verifInfo,
+            restringidoHoy = restringidoHoy
+        )
+
         Spacer(modifier = Modifier.height(32.dp))
-        SeccionHolograma()
+
+        // Holograma
+        SeccionHolograma(
+            hologramaSeleccionado = hologramaUi
+        )
+
         Spacer(modifier = Modifier.height(24.dp))
-        TextoHoyNoCircula()
+
+        // Texto "Hoy no circula"
+        TextoHoyNoCircula(
+            resumen = hoyInfo.resumen
+        )
     }
 }
 
 @Composable
-fun EncabezadoHoyNoCircula() {
+private fun EncabezadoHoyNoCircula(
+    onBack: () -> Unit,
+    onOpenCalendar: () -> Unit
+) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        IconButton(onClick = { /* Acción de regresar */ }) {
-            Icon(Icons.Default.ArrowBack, contentDescription = "Regresar")
+        IconButton(onClick = onBack) {
+            Icon(
+                Icons.AutoMirrored.Outlined.ArrowBack,
+                contentDescription = "Regresar",
+                tint = ColorAzulOscuro
+            )
         }
         Text(
             text = "Hoy no circula",
-            style = MaterialTheme.typography.titleMedium,
+            color = ColorAzulOscuro,
+            fontSize = 20.sp,
             fontWeight = FontWeight.Bold
         )
-        IconButton(onClick = { /* Acción calendario */ }) {
-            Icon(Icons.Default.CalendarMonth, contentDescription = "Calendario")
+        IconButton(onClick = onOpenCalendar) {
+            Icon(
+                Icons.Default.CalendarMonth,
+                contentDescription = "Calendario",
+                tint = ColorAzulOscuro
+            )
         }
     }
 }
 
 @Composable
-fun TarjetaInformativa() {
+private fun TarjetaInformativa(
+    verifInfo: VerificacionInfo?,
+    restringidoHoy: Boolean
+) {
+    val colorBarra = if (restringidoHoy) Color(0xFFE53935) else Color(0xFF4CAF50)
+    val fondoSuave = if (restringidoHoy) Color(0xFFFFEBEE) else Color(0xFFE8F5E9)
+    val mensaje =
+        if (restringidoHoy) "No circulas el día de hoy"
+        else "Puedes circular el día de hoy"
+
+    val icono = if (restringidoHoy) Icons.Default.Block else Icons.Default.Check
+    val colorIcono = if (restringidoHoy) Color(0xFFE53935) else Color(0xFF4CAF50)
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(ColorFondoTarjeta, shape = RoundedCornerShape(12.dp))
+            .height(180.dp)
+            .background(fondoSuave, shape = RoundedCornerShape(18.dp))
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Barra lateral verde
+        // BARRA LATERAL
         Box(
             modifier = Modifier
-                .width(6.dp)
-                .height(80.dp)
-                .background(ColorVerde, shape = RoundedCornerShape(3.dp))
+                .width(10.dp)
+                .fillMaxHeight()
+                .background(colorBarra, RoundedCornerShape(8.dp))
         )
 
         Spacer(modifier = Modifier.width(16.dp))
 
         Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // ÍCONO GRANDE
             Icon(
-                Icons.Default.DirectionsCar,
-                contentDescription = "Auto",
-                tint = ColorAzulOscuro,
-                modifier = Modifier.size(40.dp)
+                icono,
+                contentDescription = null,
+                tint = colorIcono,
+                modifier = Modifier.size(52.dp)
             )
-            Spacer(modifier = Modifier.height(8.dp))
-            Surface(
-                color = ColorRosa,
-                shape = RoundedCornerShape(8.dp)
-            ) {
-                Text(
-                    text = "7 y 8",
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-                    color = Color.Black,
-                    fontWeight = FontWeight.Bold
-                )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // CHIP DE TERMINACIÓN (opcional si existe verifInfo)
+            if (verifInfo != null) {
+                Surface(
+                    color = verifInfo.color,
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    Text(
+                        text = verifInfo.terminacionLabel,
+                        modifier = Modifier.padding(horizontal = 18.dp, vertical = 4.dp),
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black
+                    )
+                }
             }
-            Spacer(modifier = Modifier.height(4.dp))
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // MENSAJE PRINCIPAL
             Text(
-                text = "Puedes circular sin restricciones",
-                color = ColorGrisTexto,
-                fontSize = 14.sp
+                text = mensaje,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = ColorAzulOscuro
             )
         }
     }
 }
 
+
 @Composable
-fun SeccionHolograma() {
-    Column {
-        Text("Holograma", fontWeight = FontWeight.Bold)
-        Spacer(modifier = Modifier.height(8.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+private fun SeccionHolograma(
+    hologramaSeleccionado: String
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Text(
+            "Holograma",
+            fontWeight = FontWeight.Bold,
+            color = ColorGrisTexto,
+            fontSize = 14.sp,
+        )
+        Spacer(modifier = Modifier.height(20.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(
+                12.dp,
+                Alignment.CenterHorizontally
+            ),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             listOf("E", "00", "0", "1", "2").forEach { valor ->
+                val seleccionado = valor == hologramaSeleccionado
                 Surface(
-                    color = if (valor == "0") ColorAzulOscuro else ColorChipInactivo,
+                    color = if (seleccionado) ColorAzulOscuro else ColorChipInactivo,
                     shape = RoundedCornerShape(50)
                 ) {
                     Text(
                         text = valor,
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                        color = if (valor == "0") Color.White else Color.Black
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                        color = if (seleccionado) Color.White else Color.Black,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold
                     )
                 }
             }
@@ -133,10 +244,22 @@ fun SeccionHolograma() {
 }
 
 @Composable
-fun TextoHoyNoCircula() {
+private fun TextoHoyNoCircula(
+    resumen: String
+) {
     Column {
-        Text("Hoy no circula", fontWeight = FontWeight.Bold)
-        Spacer(modifier = Modifier.height(4.dp))
-        Text("Circulas todos los días", color = ColorGrisTexto)
+        Spacer(modifier = Modifier.height(24.dp))
+        Text(
+            "Hoy no circula",
+            fontWeight = FontWeight.Bold,
+            color = ColorGrisTexto,
+            fontSize = 14.sp
+        )
+        Spacer(modifier = Modifier.height(10.dp))
+        Text(
+            resumen,
+            color = ColorGrisTexto,
+            fontSize = 14.sp
+        )
     }
 }

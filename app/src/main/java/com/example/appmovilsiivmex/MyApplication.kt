@@ -6,7 +6,7 @@ import android.app.NotificationManager
 import android.os.Build
 import android.preference.PreferenceManager
 import dagger.hilt.android.HiltAndroidApp
-import org.osmdroid.config.Configuration   // 👈 import importante
+import org.osmdroid.config.Configuration
 
 
 @HiltAndroidApp
@@ -15,19 +15,14 @@ class MyApplication : Application() {
     override fun onCreate() {
         super.onCreate()
 
-        // 🔹 Configuración OSMDroid (OpenStreetMap)
-
 
         val ctx = applicationContext
         Configuration.getInstance().load(
             ctx,
             PreferenceManager.getDefaultSharedPreferences(ctx)
         )
-        // User-Agent identificable (no usamos BuildConfig)
+
         Configuration.getInstance().userAgentValue = packageName
-
-
-
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val nm = getSystemService(NotificationManager::class.java)
 
@@ -46,9 +41,26 @@ class MyApplication : Application() {
                 nm.createNotificationChannel(ch)
             }
 
-            // nuevos IDs para forzar importancia alta sin desinstalar
-            createHeadsUpChannel("canal_deteccion_vehiculo", "Ubicación de vehículo", "Detecciones y ubicaciones")
-            createHeadsUpChannel("canal_prueba_v2", "Pruebas (v2)", "Notificaciones de prueba")
+            // Canales para notificaciones
+            createHeadsUpChannel(
+                "canal_deteccion_vehiculo",
+                "Ubicación de vehículo",
+                "Detecciones y ubicaciones"
+            )
+
+            // Canal para detecciones
+            createHeadsUpChannel(
+                "canal_prueba_v2",
+                "Pruebas (v2)",
+                "Notificaciones de prueba"
+            )
+
+            // Canal para Hoy no circula
+            createHeadsUpChannel(
+                "canal_hoy_no_circula",
+                "Recordatorios Hoy No Circula",
+                "Te avisa cuando tu vehículo no circula"
+            )
         }
     }
 

@@ -7,10 +7,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -27,7 +23,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -46,7 +41,6 @@ fun EditarVehiculoScreen(
     hologramaInicial: String,
     onSave: (placa: String, marca: String, nombre: String, anio: String, holograma: String) -> Unit
 ) {
-    val fondoApp = Color(0xFFF9FBF8)
 
     // Estado editable local
     var placa by remember { mutableStateOf(placaInicial) }
@@ -56,13 +50,13 @@ fun EditarVehiculoScreen(
     var holograma by remember { mutableStateOf(hologramaInicial) } // "E", "00", "0", "1", "2"
 
     Scaffold(
-        containerColor = fondoApp,
+        containerColor = Color.White,
         topBar = {
             // Barra superior sin flecha, título centrado
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(fondoApp)
+                    .background(Color.White)
                     .statusBarsPadding()
                     .padding(vertical = 16.dp),
                 contentAlignment = Alignment.Center
@@ -82,7 +76,7 @@ fun EditarVehiculoScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(fondoApp)
+                .background(Color.White)
                 .verticalScroll(rememberScrollState())
                 .padding(
                     start = 16.dp,
@@ -332,6 +326,7 @@ private fun BotonAccionLleno(
             Text(
                 text = texto,
                 color = textoColor,
+
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold
             )

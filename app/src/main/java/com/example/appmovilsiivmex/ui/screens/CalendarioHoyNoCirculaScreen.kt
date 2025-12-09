@@ -10,123 +10,136 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material3.DrawerValue
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SmallTopAppBar
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberDrawerState
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
-import com.example.appmovilsiivmex.navigation.MenuHamburguesa
 import com.example.appmovilsiivmex.ui.theme.ColorAzulOscuro
-import kotlinx.coroutines.launch
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CalendarioHoyNoCirculaScreen (navController: NavController) {
-    val estadoDrawer = rememberDrawerState(initialValue = DrawerValue.Closed)
-    val scope = rememberCoroutineScope()
+fun CalendarioHoyNoCirculaScreen(
+    onBack: () -> Unit = {}
+) {
 
-    ModalNavigationDrawer(
-    drawerState = estadoDrawer,
-    drawerContent = {
-        MenuHamburguesa(
-            onOpcionSeleccionada = { ruta ->
-                navController.navigate(ruta)
-            },
-            onCerrarSesion = { /* Acción de cerrar sesión */ }
-        )
-    }
-    ) {
-        Scaffold(
-            topBar = {
-                SmallTopAppBar(
-                    title = { Text("Bienvenido") },
-                    navigationIcon = {
-                        IconButton(onClick = {
-                            scope.launch { estadoDrawer.open() }
-                        }) {
-                            Icon(Icons.Default.Menu, contentDescription = "Abrir menú")
-                        }
-                    }
-                )
-            }
-        ) { padding ->
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .padding(horizontal = 24.dp, vertical = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                // Encabezado
-                Text(
-                    text = "Hologramas 0, 00 y exentos",
-                    fontWeight = FontWeight.SemiBold,
-                    color = Color.Gray
-                )
-                Text(text = "Circulas todos los días")
+    Scaffold(
+        topBar = { TopBar(onBack) }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .background(Color.White)
+                .fillMaxSize()
+                .padding(padding)
+                .padding(horizontal = 24.dp, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            // Encabezado
+            Text(
+                text = "Hologramas 0, 00 y exentos",
+                fontWeight = FontWeight.SemiBold,
+                color = Color.Gray
+            )
+            Text(text = "Circulas todos los días")
 
-                Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-                Text(
-                    text = "Hologramas 1 y 2 entre semana",
-                    fontWeight = FontWeight.SemiBold,
-                    color = Color.Gray
-                )
+            Text(
+                text = "Hologramas 1 y 2 entre semana",
+                fontWeight = FontWeight.SemiBold,
+                color = Color.Gray
+            )
 
-                // Tabla de terminaciones y días
-                ColumnaHoyNoCircula()
+            // Tabla de terminaciones y días
+            ColumnaHoyNoCircula()
 
-                Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
-                // Sección holograma 1 sabatino
-                Text(
-                    text = "Holograma 1 sabatino",
-                    fontWeight = FontWeight.SemiBold,
-                    color = Color.Gray
-                )
-                FilaTexto(
-                    titulo = "Terminación",
-                    valor = "Sábados del mes"
-                )
-                FilaTexto(
-                    titulo = "1, 3, 5, 7 y 9",
-                    valor = "1 y 3"
-                )
-                FilaTexto(
-                    titulo = "0, 2, 4, 6 y 8",
-                    valor = "2 y 4"
-                )
+            // Sección holograma 1 sabatino
+            Text(
+                text = "Holograma 1 sabatino",
+                fontWeight = FontWeight.SemiBold,
+                color = Color.Gray
+            )
+            FilaTexto(
+                titulo = "Terminación",
+                valor = "Sábados del mes"
+            )
+            FilaTexto(
+                titulo = "1, 3, 5, 7 y 9",
+                valor = "1 y 3"
+            )
+            FilaTexto(
+                titulo = "0, 2, 4, 6 y 8",
+                valor = "2 y 4"
+            )
 
-                Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
-                // Sección holograma 2 sabatino
-                Text(
-                    text = "Holograma 2 sabatino",
-                    fontWeight = FontWeight.SemiBold,
-                    color = Color.Gray
-                )
-                Text(text = "Descansan todos los sábados del mes")
-            }
-
+            // Sección holograma 2 sabatino
+            Text(
+                text = "Holograma 2 sabatino",
+                fontWeight = FontWeight.SemiBold,
+                color = Color.Gray
+            )
+            Text(text = "Descansan todos los sábados del mes")
         }
+
     }
+
 }
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun TopBar(onBack: () -> Unit) {
+    TopAppBar(
+        title = {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(end = 40.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "Calendario Hoy no Circula",
+                    color = ColorAzulOscuro,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        },
+        navigationIcon = {
+            IconButton(
+                onClick = onBack,
+                modifier = Modifier.size(40.dp) // tamaño típico del botón
+            ) {
+                Icon(
+                    Icons.AutoMirrored.Outlined.ArrowBack,
+                    contentDescription = "Volver",
+                    tint = ColorAzulOscuro
+                )
+            }
+        },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = Color.Transparent
+        )
+    )
+}
+
 
 @Composable
 fun ColumnaHoyNoCircula() {
@@ -151,9 +164,6 @@ fun ColumnaHoyNoCircula() {
     }
 }
 
-/**
- * Fila con un recuadro de color y el día correspondiente.
- */
 @Composable
 fun FilaColor(terminacion: String, colorFondo: Color, dia: String) {
     Row(
@@ -183,9 +193,6 @@ fun FilaColor(terminacion: String, colorFondo: Color, dia: String) {
     }
 }
 
-/**
- * Fila genérica de texto con dos columnas.
- */
 @Composable
 fun FilaTexto(
     titulo: String,
