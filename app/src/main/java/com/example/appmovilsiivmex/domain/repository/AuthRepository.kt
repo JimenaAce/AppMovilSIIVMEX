@@ -13,5 +13,4 @@ interface AuthRepository {
     suspend fun resendEmailReset(email: String): Result<Unit>
     suspend fun changePassword(email: String, newPassword: String): Result<Unit>
 
-
 }

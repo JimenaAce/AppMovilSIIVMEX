@@ -4,4 +4,8 @@ data class VerifyCodeResetUiState(
     val code: String = "",
     val isLoading: Boolean = false,
     val resendSeconds: Int = 0,
+    val verifyCodeResetSuccess: Boolean = false,
+
+    // Errores
+    val verifyCodeResetError: String? = null
 )

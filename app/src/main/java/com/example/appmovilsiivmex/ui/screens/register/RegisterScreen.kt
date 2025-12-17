@@ -4,8 +4,10 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -158,11 +160,38 @@ fun RegisterScreen(
                     },
                     title = { Text("Términos y condiciones") },
                     text = {
-                        Text(
-                            "Aquí va el texto de tus términos y condiciones de la aplicación SIIVMEX..."
-                        )
+                        Box(
+                            modifier = Modifier
+                                .heightIn(max = 400.dp)
+                                .verticalScroll(rememberScrollState())
+                        ) {
+                            Text(
+                                text = "El presente documento establece los términos y condiciones bajo los cuales se permite el uso del sistema desarrollado para la detección de placas vehiculares, búsqueda de información pública asociada y notificación de ubicaciones registradas. Al hacer uso de esta aplicación, el usuario acepta y se compromete a cumplir lo siguiente:\n" +
+                                        "1. Del propósito del sistema\n" +
+                                        "El sistema ha sido desarrollado con fines académicos y de investigación, como parte de un proyecto escolar. Su uso está destinado exclusivamente a propósitos personales, de prueba o demostración, sin fines comerciales ni de difusión masiva.\n" +
+                                        "2. De la privacidad de la información\n" +
+                                        "Las placas vehiculares detectadas no serán compartidas con terceros fuera del entorno académico en el que se desarrolla el sistema.\n" +
+                                        "La información asociada a la placa (multas, verificaciones, entre otros) es obtenida únicamente de fuentes públicas disponibles en línea.\n" +
+                                        "El sistema permite la redistribución de datos sensibles.\n" +
+                                        "3. Del uso del correo electrónico\n" +
+                                        "El correo electrónico proporcionado por el usuario será utilizado únicamente para fines de autenticación (inicio de sesión) y recuperación de contraseña.\n" +
+                                        "No se enviará contenido publicitario no solicitado.\n" +
+                                        "El correo electrónico no será compartido con terceros ni utilizado para fines fuera de los mencionados.\n" +
+                                        "4. De la responsabilidad del usuario\n" +
+                                        "El usuario se compromete a utilizar el sistema de manera ética y conforme a las leyes de protección de datos personales aplicables.\n" +
+                                        "Queda prohibido el uso del sistema para monitorear, rastrear o identificar a personas sin su consentimiento.\n" +
+                                        "El usuario reconoce que la información proporcionada por el sistema proviene de fuentes externas, por lo que su veracidad y actualidad no pueden garantizarse al 100%.\n" +
+                                        "5. De la limitación de responsabilidad\n" +
+                                        "Dado que el sistema es un prototipo en desarrollo, los resultados obtenidos pueden contener errores o limitaciones técnicas.\n" +
+                                        "Los desarrolladores no se hacen responsables por el mal uso del sistema ni por decisiones tomadas con base en la información entregada.\n" +
+                                        "6. De las condiciones de acceso\n" +
+                                        "El acceso y uso del sistema implica la aceptación plena de estos términos y condiciones.\n" +
+                                        "Estos términos pueden ser modificados en futuras versiones del sistema, con el previo aviso dentro de la aplicación o documentación del proyecto."
+                            )
+                        }
                     }
                 )
+
             }
 
         }

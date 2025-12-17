@@ -1,7 +1,5 @@
 package com.example.appmovilsiivmex.ui.screens.vehicle
 
-import com.example.appmovilsiivmex.domain.usecase.PlateRegion
-
 data class VehicleUiState(
     val plate: String = "",
     val carName: String = "",
@@ -13,5 +11,6 @@ data class VehicleUiState(
     val vehicleRegisterSuccess: Boolean = false,
 
     // Errores
-    val plateError: String? = null
+    val plateError: String? = null,
+    val vehicleRegisterError: String? = null
 )

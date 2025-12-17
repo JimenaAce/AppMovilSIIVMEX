@@ -4,6 +4,8 @@ import com.example.appmovilsiivmex.domain.repository.AuthRepository
 import com.example.appmovilsiivmex.domain.repository.NotificationRepository
 import com.example.appmovilsiivmex.domain.repository.VehicleRepository
 import com.example.appmovilsiivmex.domain.usecase.ChangePasswordUseCase
+import com.example.appmovilsiivmex.domain.usecase.DeleteVehicleUseCase
+import com.example.appmovilsiivmex.domain.usecase.EditVehicleUseCase
 import com.example.appmovilsiivmex.domain.usecase.GetNotificationsUseCase
 import com.example.appmovilsiivmex.domain.usecase.LoginUseCase
 import com.example.appmovilsiivmex.domain.usecase.MarkNotificationReadUseCase
@@ -101,6 +103,22 @@ object UseCaseModule {
         repository: VehicleRepository
     ): VehicleRegisterUseCase {
         return VehicleRegisterUseCase(repository)
+    }
+
+    @Provides
+    @ViewModelScoped
+    fun provideEditVehicleUseCase(
+        repository: VehicleRepository
+    ): EditVehicleUseCase {
+        return EditVehicleUseCase(repository)
+    }
+
+    @Provides
+    @ViewModelScoped
+    fun provideDeleteVehicleUseCase(
+        repository: VehicleRepository
+    ): DeleteVehicleUseCase {
+        return DeleteVehicleUseCase(repository)
     }
 
     @Provides

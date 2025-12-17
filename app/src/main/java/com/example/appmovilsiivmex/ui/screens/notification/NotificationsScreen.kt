@@ -8,8 +8,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -22,8 +20,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavController
 import com.example.appmovilsiivmex.domain.model.Notification
 import com.example.appmovilsiivmex.ui.theme.ColorAzulOscuro
 import java.text.SimpleDateFormat
@@ -31,9 +29,8 @@ import java.util.Locale
 
 @Composable
 fun NotificacionesScreen(
-    navController: NavController,
-    onMenuClick: () -> Unit = {},
-    viewModel: NotificationsViewModel = hiltViewModel()
+    viewModel: NotificationsViewModel = hiltViewModel(),
+    onBack: () -> Unit = {},
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val userId = uiState.userId
@@ -42,136 +39,109 @@ fun NotificacionesScreen(
         viewModel.loadNotifications(userId)
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.White)
-            .statusBarsPadding()
-            .padding(horizontal = 16.dp, vertical = 12.dp)
-    ) {
+    Scaffold(
+        topBar = { TopBar(onBack)}
+    ) { innerPadding ->
 
-        // ───────── HEADER ─────────
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.White)
+                .statusBarsPadding()
+                .padding(innerPadding)
+                .padding(horizontal = 16.dp, vertical = 12.dp)
         ) {
-            IconButton(onClick = onMenuClick) {
-                Icon(
-                    imageVector = Icons.Default.Menu,
-                    contentDescription = "Menú",
-                    tint = ColorAzulOscuro
-                )
-            }
-            Surface(
-                shape = RoundedCornerShape(50),
-                color = Color(0xFFF5F5F5)
-            ) {
-                Row(
-                    modifier = Modifier
-                        .padding(horizontal = 12.dp, vertical = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "NVW1118",
-                        color = ColorAzulOscuro,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Icon(
-                        imageVector = Icons.Default.ArrowDropDown,
-                        contentDescription = "Cambiar placa",
-                        tint = ColorAzulOscuro
-                    )
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // ───────── CONTENIDO ─────────
+            when {
+                uiState.isLoading -> {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
                 }
-            }
 
-            Spacer(modifier = Modifier.weight(1f))
-
-            IconButton(onClick = { /* ya estamos aquí */ }) {
-                Icon(
-                    imageVector = Icons.Default.Notifications,
-                    contentDescription = "Notificaciones",
-                    tint = ColorAzulOscuro
-                )
-            }
-
-            Box(
-                modifier = Modifier
-                    .size(32.dp)
-                    .clip(CircleShape)
-                    .background(Color(0xFFFFE0B2)),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "JC",
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = ColorAzulOscuro
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(20.dp))
-
-        // ───────── TÍTULO ─────────
-        Text(
-            text = "Notificaciones",
-            color = ColorAzulOscuro,
-            fontSize = 26.sp,
-            fontWeight = FontWeight.Bold
-        )
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        // ───────── CONTENIDO ─────────
-        when {
-            uiState.isLoading -> {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator()
-                }
-            }
-
-            uiState.notifications.isEmpty() -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "No tienes notificaciones por el momento.",
-                        color = ColorAzulOscuro.copy(alpha = 0.7f),
-                        fontSize = 14.sp
-                    )
-                }
-            }
-
-            else -> {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(vertical = 4.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    items(uiState.notifications) { notif ->
-                        NotificacionItem(
-                            notification = notif,
-                            onClick = {
-                                if (!notif.leida) {
-                                    viewModel.markAsRead(notif.id)
-                                }
-                                // navController.navigate("detalle_notificacion/${notif.id}")
-                            }
+                uiState.notifications.isEmpty() -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "No tienes notificaciones por el momento.",
+                            color = ColorAzulOscuro.copy(alpha = 0.7f),
+                            fontSize = 14.sp
                         )
                     }
-                    item { Spacer(modifier = Modifier.height(80.dp)) }
+                }
+
+                else -> {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(vertical = 4.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(uiState.notifications) { notif ->
+                            NotificacionItem(
+                                notification = notif,
+                                onClick = {
+                                    if (!notif.leida) {
+                                        viewModel.markAsRead(notif.id)
+                                    }
+
+                                }
+                            )
+                        }
+                        item { Spacer(modifier = Modifier.height(80.dp)) }
+                    }
                 }
             }
         }
     }
 }
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun TopBar(onBack: () -> Unit) {
+    TopAppBar(
+        title = {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(end = 40.dp), // compensar el tamaño del icono
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "Notificaciones",
+                    color = ColorAzulOscuro,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        },
+        navigationIcon = {
+            IconButton(
+                onClick = onBack,
+                modifier = Modifier.size(40.dp) // tamaño típico del botón
+            ) {
+                Icon(
+                    Icons.AutoMirrored.Outlined.ArrowBack,
+                    contentDescription = "Volver",
+                    tint = ColorAzulOscuro
+                )
+            }
+        },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = Color.Transparent
+        )
+    )
+}
+
+
 
 @Composable
 private fun NotificacionItem(
@@ -275,7 +245,6 @@ private fun NotificacionItem(
         }
     }
 }
-
 
 
 // Puedes mejorar luego la lógica para mostrar "Hoy", "Ayer", etc.

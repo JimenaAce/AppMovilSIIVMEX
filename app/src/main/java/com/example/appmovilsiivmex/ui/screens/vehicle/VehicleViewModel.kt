@@ -3,6 +3,8 @@ package com.example.appmovilsiivmex.ui.screens.vehicle
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.appmovilsiivmex.data.local.SessionManager
+import com.example.appmovilsiivmex.domain.model.Vehicle
 import com.example.appmovilsiivmex.domain.usecase.PlateRegion
 import com.example.appmovilsiivmex.domain.usecase.ValidatePlateUseCase
 import com.example.appmovilsiivmex.domain.usecase.VehicleRegisterUseCase
@@ -18,6 +20,7 @@ import javax.inject.Inject
 @HiltViewModel
 class VehicleViewModel @Inject constructor(
 
+    private val sessionManager: SessionManager,
     private val vehicleRegisterUseCase: VehicleRegisterUseCase,
     private val validatePlateUseCase: ValidatePlateUseCase
 
@@ -73,25 +76,23 @@ class VehicleViewModel @Inject constructor(
         }
     }
 
-    fun onRegisterVehicle(email: String) {
+    fun onRegisterVehicle(email: String, updateSession: Boolean) {
         viewModelScope.launch {
 
             val region = _uiState.value.region
-            if (region.isNullOrBlank()){
+            if (region.isNullOrBlank()) {
                 _uiState.update {
                     it.copy(
                         plateError = "La placa debe corresponder a CDMX o EDOMEX antes de registrar el vehículo."
                     )
                 }
-
                 return@launch
             }
 
             _uiState.update { it.copy(isLoading = true) }
 
-            try{
-
-                Log.d("RegistroVehiculo", "El email es: $email y la región es: ${region}" )
+            try {
+                Log.d("RegistroVehiculo", "El email es: $email y la región es: $region")
 
                 val result = vehicleRegisterUseCase(
                     email = email,
@@ -104,10 +105,17 @@ class VehicleViewModel @Inject constructor(
                 )
 
                 result.fold(
-
                     onSuccess = { vehicle ->
 
                         Log.d("RegistroVehiculo", "El vehículo es: $vehicle")
+
+                        if (updateSession) {
+                            Log.d("RegistroVehiculo", "Un nuevo vehículo: $vehicle")
+                            actualizarSessionConNuevoVehiculo(email, vehicle)
+
+                        }else {
+                            Log.d("RegistroVehiculo", "Primer vehículo: $vehicle")
+                        }
 
                         _uiState.update {
                             it.copy(
@@ -115,30 +123,54 @@ class VehicleViewModel @Inject constructor(
                                 vehicleRegisterSuccess = true
                             )
                         }
-
                     },
-                    onFailure = {
-
+                    onFailure = { error ->
                         _uiState.update {
                             it.copy(
                                 isLoading = false,
-                                vehicleRegisterSuccess = false
+                                vehicleRegisterSuccess = false,
+                                vehicleRegisterError = error.message
                             )
                         }
-
                     }
                 )
 
-            } catch (e: Exception){
-
+            } catch (e: Exception) {
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        vehicleRegisterSuccess = false
+                        vehicleRegisterSuccess = false,
+                        vehicleRegisterError = "Error de conexión. ${e.message}"
                     )
                 }
-
             }
         }
+    }
+
+    private suspend fun actualizarSessionConNuevoVehiculo(emailFallback: String, vehicle: Vehicle) {
+
+        // Si por alguna razón aún no hay sesión, mejor no marcamos logged-in aquí
+        val currentlyLogged = sessionManager.isLoggedIn()
+        if (!currentlyLogged) {
+            Log.w("RegistroVehiculo", "Intento de actualizar sesión sin estar logueado. Se omite.")
+            return
+        }
+
+        val currentVehicles = sessionManager.getVehicles()
+        val updatedVehicles = currentVehicles + vehicle
+
+        val userId = sessionManager.getUserId() ?: vehicle.usuario_id
+        val storedEmail = sessionManager.getUserEmail() ?: emailFallback
+        val storedName = sessionManager.getUserName() ?: ""
+
+        val selectedId = sessionManager.getSelectedVehicleId() ?: vehicle.id
+
+        sessionManager.saveSession(
+            userId = userId,
+            email = storedEmail,
+            name = storedName,
+            vehicles = updatedVehicles,
+            selectedVehicleId = selectedId
+        )
     }
 }

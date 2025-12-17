@@ -22,19 +22,31 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.appmovilsiivmex.navigation.AppHeader
 import com.example.appmovilsiivmex.ui.theme.ColorAzulOscuro
-import com.example.appmovilsiivmex.ui.screens.multas.MultasViewModel
 
 @Composable
 fun MultasScreen(
-    navController: NavController,
-    onMenuClick: () -> Unit = {}
+    navController: NavController
 ) {
     val fondoApp = Color(0xFFFFFFFF)
     var filtroSeleccionado by remember { mutableStateOf("CDMX") }
 
-    val viewModel: MultasViewModel = viewModel()
+    // data dummy
+    val multasCDMX = listOf(
+        MultaUi("CDMX MUL12345", "5 de mayo de 2025", "Exceso de velocidad"),
+        MultaUi("CDMX MUL67890", "30 de abril de 2025", "Uso de celular"),
+    )
+    val multasEDOMEX = listOf(
+        MultaUi("EDOMEX MUL12345", "5 de mayo de 2025", "Exceso de velocidad"),
+        MultaUi("EDOMEX MUL67890", "28 de abril de 2025", "Verificación vencida"),
+    )
+
+    val multasMostrar = when (filtroSeleccionado) {
+        "CDMX" -> multasCDMX
+        "EDOMEX" -> multasEDOMEX
+        else -> multasCDMX + multasEDOMEX
+    }
 
     Column(
         modifier = Modifier
@@ -45,71 +57,16 @@ fun MultasScreen(
     ) {
 
         // HEADER
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            IconButton(onClick = onMenuClick) {
-                Icon(
-                    imageVector = Icons.Default.Menu,
-                    contentDescription = "Menú",
-                    tint = ColorAzulOscuro
-                )
-            }
+        AppHeader(
+            navController = navController,
+            showMenu = true,
+            showNotificationDot = false
+        )
 
-            Surface(
-                shape = RoundedCornerShape(50),
-                color = Color(0xFFF5F5F5)
-            ) {
-                Row(
-                    modifier = Modifier
-                        .padding(horizontal = 12.dp, vertical = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "NVW1118",
-                        color = ColorAzulOscuro,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Icon(
-                        imageVector = Icons.Default.ArrowDropDown,
-                        contentDescription = "Cambiar placa",
-                        tint = ColorAzulOscuro
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.weight(1f))
-
-            IconButton(onClick = { navController.navigate("notificaciones") }) {
-                Icon(
-                    imageVector = Icons.Default.NotificationsNone,
-                    contentDescription = "Notificaciones",
-                    tint = ColorAzulOscuro
-                )
-            }
-
-            Box(
-                modifier = Modifier
-                    .size(32.dp)
-                    .clip(CircleShape)
-                    .background(Color(0xFFFFE0B2)),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "JC",
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = ColorAzulOscuro
-                )
-            }
-        }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // SELECTOR
+        // SELECTOR (CDMX / EDOMEX / Todas)
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(6.dp)
@@ -134,50 +91,16 @@ fun MultasScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         // LISTA
-        when {
-            viewModel.cargando -> {
-                Text(
-                    text = "Cargando multas...",
-                    color = ColorAzulOscuro,
-                    fontSize = 14.sp
-                )
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+        ) {
+            multasMostrar.forEach { multa ->
+                MultaItem(multa)
+                Spacer(modifier = Modifier.height(12.dp))
             }
-
-            viewModel.error != null -> {
-                Text(
-                    text = viewModel.error!!,
-                    color = Color.Red,
-                    fontSize = 14.sp
-                )
-            }
-
-            else -> {
-                val multasMostrar = viewModel.multas.filter {
-                    when (filtroSeleccionado) {
-                        "CDMX" -> it.entidad == "CDMX"
-                        "EDOMEX" -> it.entidad == "EDOMEX"
-                        else -> true
-                    }
-                }
-
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .verticalScroll(rememberScrollState())
-                ) {
-                    multasMostrar.forEach { multa ->
-                        MultaItem(
-                            multa = MultaUi(
-                                folio = multa.folio,
-                                fecha = multa.fecha,
-                                motivo = multa.motivo
-                            )
-                        )
-                        Spacer(modifier = Modifier.height(12.dp))
-                    }
-                    Spacer(modifier = Modifier.height(80.dp))
-                }
-            }
+            Spacer(modifier = Modifier.height(80.dp))
         }
     }
 }

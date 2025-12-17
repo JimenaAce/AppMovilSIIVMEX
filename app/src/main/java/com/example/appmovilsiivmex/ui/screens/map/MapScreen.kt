@@ -15,12 +15,13 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.BrokenImage
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -35,13 +36,18 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.appmovilsiivmex.R
 import com.example.appmovilsiivmex.domain.model.VehicleDetection
+import com.example.appmovilsiivmex.navigation.LocalOnVehicleSelected
+import com.example.appmovilsiivmex.navigation.LocalSelectedVehicleId
+import com.example.appmovilsiivmex.navigation.LocalVehicles
 import kotlinx.coroutines.delay
 import org.osmdroid.tileprovider.tilesource.XYTileSource
 import org.osmdroid.util.BoundingBox
@@ -58,24 +64,37 @@ fun MapScreen(
     val context = LocalContext.current
     val state by viewModel.mapState.collectAsState()
 
-    val selectedVehicleId = state.selectedVehicleId
+    val vehicles = LocalVehicles.current
+    val globalSelectedVehicleId = LocalSelectedVehicleId.current
+    val onVehicleSelectedGlobal = LocalOnVehicleSelected.current
 
+
+    // Vehículo seleccionado a nivel de esta pantalla,
+    // inicializado con el global (o el primero de la lista)
+    var selectedVehicleId by remember(globalSelectedVehicleId, vehicles) {
+        mutableStateOf(
+            globalSelectedVehicleId ?: vehicles.firstOrNull()?.id
+        )
+    }
+
+    // Para pintar el texto del selector
+    val selectedVehicle = remember(vehicles, selectedVehicleId) {
+        vehicles.firstOrNull { it.id == selectedVehicleId }
+    }
+
+    var selectorExpanded by remember { mutableStateOf(false) }
 
     var selectedDetection by remember { mutableStateOf<VehicleDetection?>(null) }
     var pendingDetection by remember { mutableStateOf<VehicleDetection?>(null) }
-
-    // Trigger para poder volver a hacer zoom aunque sea el mismo marcador
     var clickTrigger by remember { mutableIntStateOf(0) }
 
+    // Cuando cambie el vehículo seleccionado en esta pantalla → cargamos detecciones
     LaunchedEffect(selectedVehicleId) {
-        selectedVehicleId?.let { id ->
-            viewModel.loadDetections(id)
-        }
+        selectedVehicleId?.let { viewModel.loadDetections(it) }
     }
 
     val mapView = remember {
         MapView(context).apply {
-
             val googleLikeTileSource = XYTileSource(
                 "CartoDBPositron",
                 0, 19, 256, ".png", arrayOf(
@@ -102,7 +121,6 @@ fun MapScreen(
                 13.0, -120.0
             )
             setScrollableAreaLimitDouble(mexicoBounds)
-
         }
     }
 
@@ -119,13 +137,13 @@ fun MapScreen(
                 animateTo(centerPoint)
             }
         }
-
         delay(500)
         selectedDetection = det
     }
 
     Box(Modifier.fillMaxSize()) {
 
+        // Mapa
         AndroidView(
             modifier = Modifier.fillMaxSize(),
             factory = { mapView },
@@ -142,6 +160,92 @@ fun MapScreen(
             }
         )
 
+        // ──────────────────────────────────────
+        // Selector de vehículo (estilo AppHeader)
+        // ──────────────────────────────────────
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 16.dp),
+            contentAlignment = Alignment.TopCenter
+        ) {
+            if (vehicles.isNotEmpty() && selectedVehicle != null) {
+                Box {
+                    Surface(
+                        shape = RoundedCornerShape(50),
+                        color = Color(0xFFF5F5F5),
+                        shadowElevation = 4.dp,
+                        modifier = Modifier.clickable { selectorExpanded = true }
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .padding(horizontal = 20.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = selectedVehicle.placa,
+                                color = Color(0xFF1A2E47),
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Icon(
+                                imageVector = Icons.Default.ArrowDropDown,
+                                contentDescription = "Cambiar vehículo",
+                                tint = Color(0xFF1A2E47)
+                            )
+                        }
+                    }
+
+                    DropdownMenu(
+                        expanded = selectorExpanded,
+                        onDismissRequest = { selectorExpanded = false },
+                        modifier = Modifier
+                            .background(
+                                color = Color.White,
+                                shape = RoundedCornerShape(16.dp)
+                            )
+                    ) {
+                        vehicles.forEachIndexed { index, vehicle ->
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        text = vehicle.placa,
+                                        color = Color(0xFF1A2E47),
+                                        fontSize = 14.sp,
+                                        fontWeight = if (vehicle.id == selectedVehicleId)
+                                            FontWeight.Bold else FontWeight.Normal
+                                    )
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Default.DirectionsCar,
+                                        contentDescription = null,
+                                        tint = Color(0xFF1A2E47)
+                                    )
+                                },
+                                onClick = {
+                                    selectedVehicleId = vehicle.id
+                                    selectorExpanded = false
+                                    onVehicleSelectedGlobal(vehicle.id)
+                                    // (si quieres, aquí podrías guardar en SessionManager
+                                    // usando algún callback global más adelante)
+                                }
+                            )
+                            if (index != vehicles.lastIndex) {
+                                HorizontalDivider(
+                                    modifier = Modifier.padding(horizontal = 12.dp),
+                                    thickness = DividerDefaults.Thickness,
+                                    color = Color(0xFFE0E6EE)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Loading overlay
         if (state.isLoading) {
             Box(
                 modifier = Modifier
@@ -153,6 +257,7 @@ fun MapScreen(
             }
         }
 
+        // Card inferior con info de la detección
         AnimatedVisibility(
             visible = selectedDetection != null,
             enter = fadeIn() + slideInVertically(initialOffsetY = { it / 3 }),
@@ -171,19 +276,17 @@ fun MapScreen(
     }
 }
 
+// ──────────────────────────────────────
+// Helpers y composables auxiliares
+// ──────────────────────────────────────
+
 fun formatFechaHora(original: String?): String {
     if (original.isNullOrBlank()) return ""
 
     return try {
-        // Formato que llega del backend
         val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US)
-
-        // Parseamos la fecha original
         val date = inputFormat.parse(original)
-
-        // Formato bonito que quieres mostrar
         val outputFormat = SimpleDateFormat("dd MMM yyyy · hh:mm a", Locale("es", "MX"))
-
         outputFormat.format(date!!)
     } catch (e: Exception) {
         original
@@ -232,7 +335,6 @@ fun DetectionBottomCard(
 ) {
     var showFullImage by remember { mutableStateOf(false) }
 
-    // Imagen a pantalla completa
     if (showFullImage && !detection.imagenBase64.isNullOrBlank()) {
         FullScreenDetectionViewer(
             base64 = detection.imagenBase64,
@@ -242,7 +344,6 @@ fun DetectionBottomCard(
         )
     }
 
-    // Card flotante
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.BottomCenter
@@ -260,8 +361,6 @@ fun DetectionBottomCard(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.Top
             ) {
-
-                // Imagen
                 DetectionImageFromBase64(
                     base64 = detection.imagenBase64,
                     modifier = Modifier
@@ -277,8 +376,6 @@ fun DetectionBottomCard(
                         .fillMaxWidth()
                         .padding(horizontal = 14.dp, vertical = 10.dp)
                 ) {
-
-                    // Chip con estado / cámara
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(
                             modifier = Modifier
@@ -295,7 +392,6 @@ fun DetectionBottomCard(
                     }
                     Spacer(Modifier.height(4.dp))
 
-                    // Título
                     Text(
                         text = detection.ubicacion ?: "Ubicación desconocida",
                         style = MaterialTheme.typography.titleSmall.copy(
@@ -305,7 +401,6 @@ fun DetectionBottomCard(
                     )
                     Spacer(Modifier.height(4.dp))
 
-                    // Fecha / hora
                     Text(
                         text = formatFechaHora(detection.fechaHora),
                         style = MaterialTheme.typography.bodySmall,
@@ -313,7 +408,6 @@ fun DetectionBottomCard(
                     )
                     Spacer(Modifier.height(6.dp))
 
-                    // Coordenadas
                     Text(
                         text = "Lat: ${detection.lat ?: "-"} • Lng: ${detection.lng ?: "-"}",
                         style = MaterialTheme.typography.bodySmall,
@@ -321,13 +415,11 @@ fun DetectionBottomCard(
                     )
                     Spacer(Modifier.height(10.dp))
 
-                    // Botones
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
-                        Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-
                         OutlinedButton(
                             onClick = onClose,
                             modifier = Modifier.weight(1f),
@@ -373,22 +465,18 @@ fun FullScreenDetectionViewer(
                 ),
             contentAlignment = Alignment.Center
         ) {
-            // Cerrar tocando fondo
             Box(
                 modifier = Modifier
                     .matchParentSize()
-                    .clickable(onClick = onDismiss),
+                    .clickable(onClick = onDismiss)
             )
 
-            // Contenedor principal de la imagen + info
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 18.dp, vertical = 18.dp),
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
-
-                // Top bar
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -426,13 +514,11 @@ fun FullScreenDetectionViewer(
                             contentDescription = "Cerrar",
                             tint = Color.White
                         )
-
                     }
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Imagen centrada
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -463,7 +549,7 @@ fun FullScreenDetectionViewer(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ZoomableDetectionImageFromBase64(
     base64: String?,
@@ -471,7 +557,6 @@ fun ZoomableDetectionImageFromBase64(
     maxScale: Float = 4f
 ) {
     if (base64.isNullOrBlank()) {
-        // fallback igual que antes
         Box(
             modifier = modifier
                 .background(Color(0xFFE2E8F0)),
@@ -486,7 +571,6 @@ fun ZoomableDetectionImageFromBase64(
         return
     }
 
-    // Decodificar la imagen una vez
     val imageBitmap by remember(base64) {
         mutableStateOf(
             try {
@@ -514,28 +598,22 @@ fun ZoomableDetectionImageFromBase64(
         return
     }
 
-    // Estado de zoom y desplazamiento
     var scale by remember { mutableFloatStateOf(1f) }
     var offset by remember { mutableStateOf(Offset.Zero) }
 
     Box(
         modifier = modifier
             .combinedClickable(
-                onClick = { /* no-op: ya cierras con el botón X afuera */ },
+                onClick = { /* no-op */ },
                 onDoubleClick = {
-                    // reset de zoom y posición
                     scale = 1f
                     offset = Offset.Zero
                 }
             )
             .pointerInput(Unit) {
                 detectTransformGestures { _, pan, zoom, _ ->
-                    // actualizar zoom
                     val newScale = (scale * zoom).coerceIn(1f, maxScale)
-                    // ajustar pan solo cuando hay zoom
-                    val newOffset =
-                        if (newScale > 1f) offset + pan else Offset.Zero
-
+                    val newOffset = if (newScale > 1f) offset + pan else Offset.Zero
                     scale = newScale
                     offset = newOffset
                 }
@@ -556,8 +634,6 @@ fun ZoomableDetectionImageFromBase64(
         )
     }
 }
-
-
 
 @Composable
 fun DetectionImageFromBase64(

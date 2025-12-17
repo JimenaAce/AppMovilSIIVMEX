@@ -39,6 +39,11 @@ fun VerifyCodeScreen(
 ) {
     val ui by viewModel.uiState.collectAsState()
 
+    // Navegar cuando el código de verificación sea correcto
+    LaunchedEffect(ui.verifyCodeSuccess) {
+        if(ui.verifyCodeSuccess) onVerified()
+    }
+
     Scaffold(
         topBar = { VerifyTopBar(onBack) }
     ) { innerPadding ->
@@ -59,6 +64,16 @@ fun VerifyCodeScreen(
                 value = ui.code,
                 onValueChange = viewModel::onCodeChange
             )
+            if (ui.verifyCodeError != null) {
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = ui.verifyCodeError ?: "",
+                    color = MaterialTheme.colorScheme.error,
+                    fontSize = 14.sp,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
             Spacer(Modifier.height(30.dp))
 
             HelperTexts(
@@ -71,7 +86,7 @@ fun VerifyCodeScreen(
             VerifyButton(
                 enabled = ui.code.length == 4 && !ui.isLoading,
                 isLoading = ui.isLoading,
-                onClick = { viewModel.verify(email = email, onSuccess = onVerified) }
+                onClick = { viewModel.verify(email = email) }
             )
         }
     }

@@ -31,9 +31,6 @@ fun MultasconDrawerScreen(
     ) {
         MultasScreen(
             navController = navController,
-            onMenuClick = {
-                scope.launch { drawerState.open() }
-            }
         )
     }
 }

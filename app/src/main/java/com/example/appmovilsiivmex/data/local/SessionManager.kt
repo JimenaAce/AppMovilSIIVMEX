@@ -28,6 +28,8 @@ class SessionManager(private val context: Context) {
         // Nuevas keys para vehículos
         private val VEHICLES_JSON_KEY = stringPreferencesKey("vehicles_json")
         private val SELECTED_VEHICLE_ID_KEY = intPreferencesKey("selected_vehicle_id")
+
+        private val VEHICLE_LAST_VERIF_JSON_KEY = stringPreferencesKey("vehicle_last_verif_json")
     }
 
     // ─────────────────────────────────────────────
@@ -128,7 +130,7 @@ class SessionManager(private val context: Context) {
             val json = prefs[VEHICLES_JSON_KEY] ?: return@map emptyList<Vehicle>()
             try {
                 val type = object : TypeToken<List<Vehicle>>() {}.type
-                gson.fromJson<List<Vehicle>>(json, type)
+                gson.fromJson(json, type)
             } catch (e: Exception) {
                 Log.e(TAG, "Error parseando vehículos en Flow", e)
                 emptyList()
@@ -157,6 +159,65 @@ class SessionManager(private val context: Context) {
     fun selectedVehicleIdFlow(): Flow<Int?> {
         return context.dataStore.data.map { prefs ->
             prefs[SELECTED_VEHICLE_ID_KEY]
+        }
+    }
+
+
+    // ─────────────────────────────────────────────
+    // VERIFICACIÓN
+    // ─────────────────────────────────────────────
+    private fun parseLastVerifJson(json: String?): Map<Int, String> {
+        if (json.isNullOrBlank()) return emptyMap()
+        return try {
+            val type = object : TypeToken<Map<Int, String>>() {}.type
+            gson.fromJson(json, type)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error parseando mapa de última verificación", e)
+            emptyMap()
+        }
+    }
+
+    private fun mapToJson(map: Map<Int, String>): String =
+        gson.toJson(map)
+
+    // ─────────────────────────────────────────────
+    //  FECHA DE ÚLTIMA VERIFICACIÓN POR VEHÍCULO
+    // ─────────────────────────────────────────────
+
+    // obtener todas las fechas (mapa idVehiculo -> fechaISO)
+    fun vehicleLastVerificationFlow(): Flow<Map<Int, String>> {
+        return context.dataStore.data.map { prefs ->
+            parseLastVerifJson(prefs[VEHICLE_LAST_VERIF_JSON_KEY])
+        }
+    }
+
+    // obtener una sola fecha de un vehículo
+    suspend fun getVehicleLastVerificationDate(vehicleId: Int): String? {
+        val prefs = context.dataStore.data.first()
+        val map = parseLastVerifJson(prefs[VEHICLE_LAST_VERIF_JSON_KEY])
+        return map[vehicleId]
+    }
+
+    // guardar / actualizar fecha para un vehículo
+    suspend fun saveVehicleLastVerificationDate(
+        vehicleId: Int,
+        dateIso: String // "yyyy-MM-dd"
+    ) {
+        context.dataStore.edit { prefs ->
+            val currentMap = parseLastVerifJson(prefs[VEHICLE_LAST_VERIF_JSON_KEY])
+            val newMap = currentMap.toMutableMap()
+            newMap[vehicleId] = dateIso
+            prefs[VEHICLE_LAST_VERIF_JSON_KEY] = mapToJson(newMap)
+        }
+    }
+
+    // opcional: borrar fecha de un vehículo
+    suspend fun clearVehicleLastVerificationDate(vehicleId: Int) {
+        context.dataStore.edit { prefs ->
+            val currentMap = parseLastVerifJson(prefs[VEHICLE_LAST_VERIF_JSON_KEY])
+            val newMap = currentMap.toMutableMap()
+            newMap.remove(vehicleId)
+            prefs[VEHICLE_LAST_VERIF_JSON_KEY] = mapToJson(newMap)
         }
     }
 

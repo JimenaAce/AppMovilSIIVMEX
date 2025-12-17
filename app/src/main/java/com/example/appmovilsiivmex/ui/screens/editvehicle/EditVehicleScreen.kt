@@ -1,7 +1,7 @@
-package com.example.appmovilsiivmex.ui.screens.vehicle
+package com.example.appmovilsiivmex.ui.screens.editvehicle
+
 
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -19,8 +19,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -35,18 +33,16 @@ import com.example.appmovilsiivmex.ui.theme.ColorGris
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
-fun VehicleAddScreen(
-    viewModel: VehicleViewModel = hiltViewModel(),
-    email: String,
-    updateSession: Boolean,
+fun EditVehicleScreen(
+    viewModel: EditVehicleViewModel = hiltViewModel(),
     onBack: () -> Unit = {},
     onSubmit: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
     // Navegar cuando el registro sea exitoso
-    LaunchedEffect(uiState.vehicleRegisterSuccess) {
-        if(uiState.vehicleRegisterSuccess) onSubmit()
+    LaunchedEffect(uiState.vehicleEditSuccess) {
+        if(uiState.vehicleEditSuccess) onSubmit()
     }
 
     Scaffold(
@@ -63,8 +59,9 @@ fun VehicleAddScreen(
         ){
 
             TitleAndSubtitle()
-            Spacer(Modifier.height(20.dp))
+            Spacer(Modifier.height(30.dp))
 
+            /*
             PlateFilledInput(
                 value = uiState.plate,
                 onValueChange = viewModel::onPlateChange,
@@ -75,6 +72,8 @@ fun VehicleAddScreen(
                 enabled = !uiState.isLoading
             )
             Spacer(Modifier.height(12.dp))
+
+             */
 
             FilledInput(
                 value = uiState.carName,
@@ -132,22 +131,12 @@ fun VehicleAddScreen(
                 selected = uiState.hologram,
                 onSelected = viewModel::onHologramChange
             )
-            if (uiState.vehicleRegisterError != null) {
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    text = uiState.vehicleRegisterError ?: "",
-                    color = MaterialTheme.colorScheme.error,
-                    fontSize = 14.sp,
-                    textAlign = TextAlign.Start,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
             Spacer(Modifier.height(70.dp))
 
             PrimaryButton(
                 isLoading = uiState.isLoading,
                 enabled = true,
-                onClick = { viewModel.onRegisterVehicle(email, updateSession = updateSession)}
+                onClick = { viewModel.onSaveClick()}
             )
 
         }
@@ -176,21 +165,9 @@ private fun CarTopBar(onBack: () -> Unit) {
 
 
 @Composable
-private fun Illustration(resId: Int) {
-    Image(
-        painter = painterResource(resId),
-        contentDescription = null,
-        modifier = Modifier
-            .fillMaxWidth()
-            .aspectRatio(2.8f),
-        contentScale = ContentScale.Fit
-    )
-}
-
-@Composable
 private fun TitleAndSubtitle() {
     Text(
-        "Agregar Vehículo",
+        "Editar Vehículo",
         textAlign = TextAlign.Center,
         color = ColorAzulOscuro,
         fontSize = 32.sp,
@@ -198,7 +175,7 @@ private fun TitleAndSubtitle() {
         modifier = Modifier.fillMaxWidth()
     )
     Text(
-        "Ingresa la información de tu vehículo y empieza a mantenerlo al día",
+        "Ingresa la información que deseas modificar del vehículo",
         fontSize = 14.sp,
         color = ColorGris,
         textAlign = TextAlign.Center,
@@ -355,7 +332,7 @@ private fun PrimaryButton(
                 strokeWidth = 2.dp
             )
         } else {
-            Text("Registrar", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            Text("Actualizar", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
         }
     }
 }

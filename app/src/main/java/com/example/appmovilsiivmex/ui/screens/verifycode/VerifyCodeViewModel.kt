@@ -91,7 +91,7 @@ class VerifyCodeViewModel @Inject constructor(
         }
     }
 
-    fun verify(email: String, onSuccess: () -> Unit) {
+    fun verify(email: String) {
 
         viewModelScope.launch {
 
@@ -114,16 +114,16 @@ class VerifyCodeViewModel @Inject constructor(
                     _uiState.update {
                         it.copy(
                             isLoading = false,
+                            verifyCodeSuccess = true
                         )
                     }
-                    onSuccess()
                 },
                 onFailure = { error ->
 
                     _uiState.update {
                         it.copy(
                             isLoading = false,
-                            // Emplear error en caso de que no se pueda
+                            verifyCodeError = error.message
                         )
                     }
                 }
