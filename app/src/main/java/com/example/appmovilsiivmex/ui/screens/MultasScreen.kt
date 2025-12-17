@@ -22,30 +22,44 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.compose.foundation.layout.statusBarsPadding
+import com.example.appmovilsiivmex.navigation.AppHeader
+import com.example.appmovilsiivmex.navigation.LocalSelectedVehicleId
+import com.example.appmovilsiivmex.navigation.LocalVehicles
 import com.example.appmovilsiivmex.ui.theme.ColorAzulOscuro
+import okio.ByteString.Companion.encodeUtf8
 
 @Composable
 fun MultasScreen(
-    navController: NavController,
-    onMenuClick: () -> Unit = {}
+    navController: NavController
 ) {
     val fondoApp = Color(0xFFFFFFFF)
     var filtroSeleccionado by remember { mutableStateOf("CDMX") }
 
+    val vehicles = LocalVehicles.current
+    val selectedVehicleId = LocalSelectedVehicleId.current
+    val selectedVehicle =
+        vehicles.firstOrNull { it.id == selectedVehicleId } ?: vehicles.firstOrNull()
+
+    val placa = selectedVehicle?.placa
+
     // data dummy
-    val multasCDMX = listOf(
-        MultaUi("CDMX MUL12345", "5 de mayo de 2025", "Exceso de velocidad"),
-        MultaUi("CDMX MUL67890", "30 de abril de 2025", "Uso de celular"),
+    val multasCDMX = if (placa.equals("MNJ421A") ) emptyList() else listOf(
+        MultaUi("CDMX MUL4230380382", "30 de abril de 2024", "Documentaci<f3>n incompleta"),
+        MultaUi("CDMX MUL4230380345", "3 de febrero de 2025", "Exceder límites de velocidad"),
+        MultaUi("CDMX MUL4230380345", "5 de mayo de 2025", "Violaciones de motocicletas"),
+
     )
-    val multasEDOMEX = listOf(
-        MultaUi("EDOMEX MUL12345", "5 de mayo de 2025", "Exceso de velocidad"),
-        MultaUi("EDOMEX MUL67890", "28 de abril de 2025", "Verificación vencida"),
+    val multasEDOMEX =if (placa.equals("MNJ421A") ) emptyList() else listOf(
+        MultaUi("EDOMEX MUL4229208845", "3 de marzo de 2024", "Exceder límites de velocidad"),
+        MultaUi("EDOMEX MUL4229208827", "2 de enero de 2025", "Documentaci<f3>n incompleta"),
+
     )
 
     val multasMostrar = when (filtroSeleccionado) {
         "CDMX" -> multasCDMX
         "EDOMEX" -> multasEDOMEX
-        else -> multasCDMX + multasEDOMEX
+        else -> (multasCDMX + multasEDOMEX)
+            .sortedByDescending { it.fecha }
     }
 
     Column(
@@ -57,67 +71,12 @@ fun MultasScreen(
     ) {
 
         // HEADER
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            IconButton(onClick = onMenuClick) {
-                Icon(
-                    imageVector = Icons.Default.Menu,
-                    contentDescription = "Menú",
-                    tint = ColorAzulOscuro
-                )
-            }
+        AppHeader(
+            navController = navController,
+            showMenu = true,
+            showNotificationDot = false
+        )
 
-            Surface(
-                shape = RoundedCornerShape(50),
-                color = Color(0xFFF5F5F5)
-            ) {
-                Row(
-                    modifier = Modifier
-                        .padding(horizontal = 12.dp, vertical = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "NVW1118",
-                        color = ColorAzulOscuro,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Icon(
-                        imageVector = Icons.Default.ArrowDropDown,
-                        contentDescription = "Cambiar placa",
-                        tint = ColorAzulOscuro
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.weight(1f))
-
-            IconButton(onClick = { navController.navigate("notificaciones") }) {
-                Icon(
-                    imageVector = Icons.Default.NotificationsNone,
-                    contentDescription = "Notificaciones",
-                    tint = ColorAzulOscuro
-                )
-            }
-
-            Box(
-                modifier = Modifier
-                    .size(32.dp)
-                    .clip(CircleShape)
-                    .background(Color(0xFFFFE0B2)),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "JC",
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = ColorAzulOscuro
-                )
-            }
-        }
 
         Spacer(modifier = Modifier.height(16.dp))
 

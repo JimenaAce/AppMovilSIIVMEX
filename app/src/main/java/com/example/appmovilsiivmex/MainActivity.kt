@@ -27,6 +27,7 @@ import com.example.appmovilsiivmex.navigation.LocalOpenDrawer
 import com.example.appmovilsiivmex.navigation.LocalSelectedVehicleId
 import com.example.appmovilsiivmex.navigation.LocalUserEmail
 import com.example.appmovilsiivmex.navigation.LocalUserName
+import com.example.appmovilsiivmex.navigation.LocalVehicleLastVerificationMap
 import com.example.appmovilsiivmex.navigation.LocalVehicles
 import com.example.appmovilsiivmex.navigation.MenuHamburguesa
 import com.example.appmovilsiivmex.ui.theme.AppMovilSIIVMEXTheme
@@ -67,7 +68,8 @@ class MainActivity : ComponentActivity() {
                     "editar_vehiculo",
                     "cal_hoy_no_circula",
                     "cal_verificacion",
-                    "hoy_no_circula"
+                    "hoy_no_circula",
+                    "verificacion"
                 )
 
                 val mostrarBarraInferior = rutaActual?.let { it !in rutasSinBarraInferior } ?: false
@@ -78,7 +80,7 @@ class MainActivity : ComponentActivity() {
                 var avatarInitials by remember { mutableStateOf("--") }
                 val vehicles by remember { sessionManager.vehiclesFlow() }.collectAsState(initial = emptyList())
                 val selectedVehicleId by remember { sessionManager.selectedVehicleIdFlow() }.collectAsState(initial = null)
-
+                val lastVerifMap by sessionManager.vehicleLastVerificationFlow().collectAsState(initial = emptyMap())
 
                 LaunchedEffect(Unit) {
                     isLoggedIn = sessionManager.isLoggedIn()
@@ -137,7 +139,8 @@ class MainActivity : ComponentActivity() {
                     LocalUserEmail provides (userEmail ?: "usuario@correo.com"),
                     LocalVehicles provides vehicles,
                     LocalSelectedVehicleId provides selectedVehicleId,
-                    LocalOnVehicleSelected provides onVehicleSelected
+                    LocalOnVehicleSelected provides onVehicleSelected,
+                    LocalVehicleLastVerificationMap provides lastVerifMap
                 ) {
                     ModalNavigationDrawer(
                         drawerState = drawerState,
@@ -151,16 +154,24 @@ class MainActivity : ComponentActivity() {
                                     scope.launch { drawerState.close() }
                                 },
                                 onCerrarSesion = {
-                                    scope.launch { drawerState.close() }
-                                    isLoggedIn = false
-                                    userName = null
-                                    userEmail = null
+                                    scope.launch {
 
-                                    controladorNavegacion.navigate("inicio_sesion") {
-                                        popUpTo(0) { inclusive = true }
+                                        // Limpiamos datos
+                                        drawerState.close()
+                                        sessionManager.clearSession()
+                                        isLoggedIn = false
+                                        userName = null
+                                        userEmail = null
+
+                                        // Navegamos a login
+                                        controladorNavegacion.navigate("inicio_sesion") {
+                                            popUpTo(controladorNavegacion.graph.startDestinationId) {
+                                                inclusive = true
+                                            }
+                                            launchSingleTop = true
+                                        }
                                     }
-                                }
-                                ,
+                                },
                                 currentRoute = rutaActual,
                                 animationProgress = animationProgress
                             )

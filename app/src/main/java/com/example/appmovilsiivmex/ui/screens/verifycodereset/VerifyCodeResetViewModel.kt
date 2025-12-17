@@ -68,46 +68,64 @@ class VerifyCodeResetViewModel @Inject constructor(
                     _uiState.update {
                         it.copy(isLoading = false)
                     }
-                    Log.d("VERIFY_CODE_RESET", "Reenvio exitoso: ${reenvio}")
+                    //Log.d("VERIFY_CODE_RESET", "Reenvio exitoso: ${reenvio}")
                     startResendCountDown()
                 },
                 onFailure = { error ->
                     _uiState.update {
                         it.copy(isLoading = false)
                     }
-                    Log.d("VERIFY_CODE_RESET", "Al reenviar el código tenemos el error: ${error.message}")
+
                 }
             )
         }
     }
 
-    fun verify(email: String, onSuccess: () -> Unit) {
+    fun verify(email: String) {
         viewModelScope.launch {
             val code = _uiState.value.code
             _uiState.update { it.copy(isLoading = true) }
 
-            val result = verifyEmailResetUseCase(
-                email = email,
-                code = code
-            )
+            try {
 
-            Log.d("VERIFY_CODE_RESET", "El resultado es: ${result}")
-            Log.d("VERIFY_CODE_RESET", "El correo es: ${email}")
+                val result = verifyEmailResetUseCase(
+                    email = email,
+                    code = code
+                )
 
-            result.fold(
-                onSuccess = {
-                    _uiState.update {
-                        it.copy(isLoading = false)
+                //Log.d("VERIFY_CODE_RESET", "El resultado es: ${result}")
+                //Log.d("VERIFY_CODE_RESET", "El correo es: ${email}")
+
+                result.fold(
+                    onSuccess = {
+                        _uiState.update {
+                            it.copy(
+                                isLoading = false,
+                                verifyCodeResetSuccess = true
+                            )
+                        }
+                    },
+                    onFailure = { error ->
+                        _uiState.update {
+                            it.copy(
+                                isLoading = false,
+                                verifyCodeResetError = error.message
+                            )
+                        }
+                        Log.d("VERIFY_CODE_RESET", "Error en verificación: ${error.message}")
                     }
-                    onSuccess()
-                },
-                onFailure = { error ->
-                    _uiState.update {
-                        it.copy(isLoading = false)
-                    }
-                    Log.d("VERIFY_CODE_RESET", "Error en verificación: ${error.message}")
+                )
+
+            } catch (e: Exception) {
+
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        verifyCodeResetError = "Error de conexión: ${e.message}"
+                    )
                 }
-            )
+
+            }
         }
     }
 

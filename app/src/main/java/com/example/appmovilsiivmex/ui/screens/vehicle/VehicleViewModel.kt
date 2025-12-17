@@ -124,11 +124,12 @@ class VehicleViewModel @Inject constructor(
                             )
                         }
                     },
-                    onFailure = {
+                    onFailure = { error ->
                         _uiState.update {
                             it.copy(
                                 isLoading = false,
-                                vehicleRegisterSuccess = false
+                                vehicleRegisterSuccess = false,
+                                vehicleRegisterError = error.message
                             )
                         }
                     }
@@ -138,7 +139,8 @@ class VehicleViewModel @Inject constructor(
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        vehicleRegisterSuccess = false
+                        vehicleRegisterSuccess = false,
+                        vehicleRegisterError = "Error de conexión. ${e.message}"
                     )
                 }
             }

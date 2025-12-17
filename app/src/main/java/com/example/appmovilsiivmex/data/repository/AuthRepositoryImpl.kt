@@ -137,7 +137,7 @@ class AuthRepositoryImpl : AuthRepository {
 
                 },
                 onFailure = { error ->
-                    Result.failure(Exception(error))
+                    Result.failure(error)
                 }
             )
 

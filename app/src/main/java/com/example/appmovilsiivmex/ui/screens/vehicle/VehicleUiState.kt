@@ -11,5 +11,6 @@ data class VehicleUiState(
     val vehicleRegisterSuccess: Boolean = false,
 
     // Errores
-    val plateError: String? = null
+    val plateError: String? = null,
+    val vehicleRegisterError: String? = null
 )

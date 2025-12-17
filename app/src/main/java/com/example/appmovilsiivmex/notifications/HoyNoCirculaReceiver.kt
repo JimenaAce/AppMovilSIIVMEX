@@ -66,8 +66,7 @@ class HoyNoCirculaReceiver : BroadcastReceiver() {
             }
         }
 
-        // 🔁 SIEMPRE re-agendamos la misma hora para el día siguiente,
-        // independientemente de si circula o no hoy.
+
         if (hour != -1) {
             HoyNoCirculaAlarmScheduler.scheduleSingleAlarm(
                 context = context,

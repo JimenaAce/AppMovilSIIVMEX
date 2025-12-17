@@ -13,5 +13,10 @@ data class EditVehicleUiState(
     val hologram: String = "E",
 
     val vehicleEditSuccess: Boolean = false,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+
+    val isDeleting: Boolean = false,
+    val vehicleDeleteSuccess: Boolean = false,
+    val deleteMessage: String? = null
+
 )

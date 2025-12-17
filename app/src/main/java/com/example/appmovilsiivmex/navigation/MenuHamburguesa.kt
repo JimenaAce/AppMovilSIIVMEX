@@ -48,11 +48,13 @@ fun MenuHamburguesa(
             texto = "Agregar vehículo",
             ruta = "agregar_vehiculo"
         ),
-        OpcionDrawer(
+        /*OpcionDrawer(
             icono = { Icon(Icons.Default.DirectionsCar, contentDescription = "Mis vehículos") },
             texto = "Mis vehículos",
             ruta = "mis_vehiculos"
         ),
+        
+         */
         OpcionDrawer(
             icono = { Icon(Icons.Default.CalendarMonth, contentDescription = "Verificación") },
             texto = "Verificación",

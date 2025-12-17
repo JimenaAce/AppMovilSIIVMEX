@@ -14,3 +14,4 @@ val LocalSelectedVehicleId = compositionLocalOf<Int?> { null }
 val LocalOnVehicleSelected = staticCompositionLocalOf<(Int) -> Unit> {
     { _ -> }
 }
+val LocalVehicleLastVerificationMap = compositionLocalOf<Map<Int, String>> { emptyMap() }

@@ -61,6 +61,15 @@ class MyApplication : Application() {
                 "Recordatorios Hoy No Circula",
                 "Te avisa cuando tu vehículo no circula"
             )
+
+            // Canal para Verificación
+            createHeadsUpChannel(
+                "canal_verificacion",
+                "Recordatorios verificación",
+                "Te avisa cuando el vehículo tiene que verificar"
+            )
+
+
         }
     }
 

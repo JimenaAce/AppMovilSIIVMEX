@@ -132,6 +132,16 @@ fun VehicleAddScreen(
                 selected = uiState.hologram,
                 onSelected = viewModel::onHologramChange
             )
+            if (uiState.vehicleRegisterError != null) {
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = uiState.vehicleRegisterError ?: "",
+                    color = MaterialTheme.colorScheme.error,
+                    fontSize = 14.sp,
+                    textAlign = TextAlign.Start,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
             Spacer(Modifier.height(70.dp))
 
             PrimaryButton(

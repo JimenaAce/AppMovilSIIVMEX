@@ -161,7 +161,7 @@ private fun TarjetaInformativa(
             modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // ÍCONO GRANDE
+
             Icon(
                 icono,
                 contentDescription = null,
@@ -171,7 +171,7 @@ private fun TarjetaInformativa(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // CHIP DE TERMINACIÓN (opcional si existe verifInfo)
+            // CHIP DE TERMINACIÓN
             if (verifInfo != null) {
                 Surface(
                     color = verifInfo.color,

@@ -25,7 +25,7 @@ fun tieneRestriccionHoy(
     val hoy = LocalDate.now()
     val dia = hoy.dayOfWeek
 
-    // --- LUNES A VIERNES (mismo mapeo que ya tenías) ---
+    // --- LUNES A VIERNES ---
     if (dia in DayOfWeek.MONDAY..DayOfWeek.FRIDAY) {
 
         val diaDescansoEntreSemana = when (lastDigit) {
@@ -62,7 +62,7 @@ fun tieneRestriccionHoy(
             }
         }
 
-        // otros hologramas (por si acaso) → sin regla sabatina
+        // otros hologramas
         return false
     }
 

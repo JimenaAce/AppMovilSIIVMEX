@@ -97,7 +97,7 @@ class RegisterViewModel @Inject constructor(
                         _uiState.update {
                             it.copy(
                                 isLoading = false,
-                                registerError = "Error de conexión: ${error.message}"
+                                registerError = error.message
                             )
                         }
                     }

@@ -44,6 +44,9 @@ android {
 
 dependencies {
 
+    implementation("androidx.browser:browser:1.8.0")
+
+
     implementation("androidx.work:work-runtime-ktx:2.9.0")
 
     implementation("com.google.code.gson:gson:2.10.1")

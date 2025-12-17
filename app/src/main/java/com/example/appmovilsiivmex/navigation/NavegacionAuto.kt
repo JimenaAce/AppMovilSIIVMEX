@@ -17,10 +17,10 @@ import com.example.appmovilsiivmex.ui.screens.CalendarioVerificacionScreen
 import com.example.appmovilsiivmex.ui.screens.HoyNoCirculaScreen
 import com.example.appmovilsiivmex.ui.screens.MisVehiculosScreen
 import com.example.appmovilsiivmex.ui.screens.PanelScreen
-import com.example.appmovilsiivmex.ui.screens.PantallaPlaceholder
 import com.example.appmovilsiivmex.ui.screens.InicioScreen
 import com.example.appmovilsiivmex.ui.screens.MiAutoScreen
 import com.example.appmovilsiivmex.ui.screens.MultasconDrawerScreen
+import com.example.appmovilsiivmex.ui.screens.VerificacionScreen
 import com.example.appmovilsiivmex.ui.screens.editvehicle.EditVehicleScreen
 import com.example.appmovilsiivmex.ui.screens.forgotpassword.ForgotPasswordFlowViewModel
 import com.example.appmovilsiivmex.ui.screens.forgotpassword.ForgotPasswordScreen
@@ -312,14 +312,21 @@ fun NavegacionAuto(
                 onBack = { controladorNavegacion.popBackStack() }
             )
         }
-        composable("mi_verificacion") {
-            PantallaPlaceholder("Verificación")
-        }
+
+
         composable("hoy_no_circula") {
             HoyNoCirculaScreen(
                 onBack = { controladorNavegacion.popBackStack() },
                 openCalendar = { controladorNavegacion.navigate("cal_hoy_no_circula")}
             )
+        }
+
+        composable("verificacion") {
+            VerificacionScreen(
+                onBack = { controladorNavegacion.popBackStack() },
+                openCalendar = { controladorNavegacion.navigate("cal_verificacion")}
+            )
+
         }
 
     }

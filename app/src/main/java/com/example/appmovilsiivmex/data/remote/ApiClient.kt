@@ -1,6 +1,7 @@
 package com.example.appmovilsiivmex.data.remote
 
 import com.example.appmovilsiivmex.data.remote.dto.ChangePasswordResponse
+import com.example.appmovilsiivmex.data.remote.dto.DeleteVehicleResponse
 import com.example.appmovilsiivmex.data.remote.dto.EditVehicleResponse
 import com.example.appmovilsiivmex.data.remote.dto.LoginResponse
 import com.example.appmovilsiivmex.data.remote.dto.MarkReadResponse
@@ -29,7 +30,7 @@ import org.json.JSONObject
 import java.util.concurrent.TimeUnit
 
 object ApiClient {
-    private const val BASE_URL = "https://14873b71e968.ngrok-free.app"
+    private const val BASE_URL = "https://62cadcd7329b.ngrok-free.app"
 
     private val client = OkHttpClient.Builder()
         .connectTimeout(30, TimeUnit.SECONDS)
@@ -486,6 +487,37 @@ object ApiClient {
                 Result.failure(e)
             }
         }
+
+    suspend fun eliminarVehiculo(vehicleId: Int): Result<DeleteVehicleResponse> =
+        withContext(Dispatchers.IO) {
+            try {
+                val request = Request.Builder()
+                    .url("$BASE_URL/api/vehicles/$vehicleId")
+                    .delete()
+                    .build()
+
+                client.newCall(request).execute().use { response ->
+                    val responseBody = response.body?.string().orEmpty()
+                    val jsonObject = JSONObject(responseBody.ifBlank { "{}" })
+
+                    if (response.isSuccessful) {
+                        val deleteVehicleResponse = DeleteVehicleResponse(
+                            success = jsonObject.optBoolean("success", true),
+                            message = jsonObject.optString("message", "Vehículo eliminado")
+                        )
+                        Result.success(deleteVehicleResponse)
+
+                    } else {
+                        val errorMsg = jsonObject.optString("message", "Error al eliminar vehículo")
+                        Result.failure(Exception(errorMsg))
+                    }
+                }
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        }
+
+
 
     // Detecciones de un vehículo
     suspend fun deteccionesVehiculo(vehicleId: Int): Result<VehicleDetectionResponse> =

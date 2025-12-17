@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.appmovilsiivmex.data.local.SessionManager
 import com.example.appmovilsiivmex.domain.model.Vehicle
+import com.example.appmovilsiivmex.domain.usecase.DeleteVehicleUseCase
 import com.example.appmovilsiivmex.domain.usecase.EditVehicleUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,50 +18,56 @@ import javax.inject.Inject
 @HiltViewModel
 class EditVehicleViewModel @Inject constructor(
     private val sessionManager: SessionManager,
-    private val editVehicleUseCase: EditVehicleUseCase
+    private val editVehicleUseCase: EditVehicleUseCase,
+    private val deleteVehicleUseCase: DeleteVehicleUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(EditVehicleUiState())
     val uiState: StateFlow<EditVehicleUiState> = _uiState.asStateFlow()
 
     init {
-        // Cargar vehículo seleccionado al iniciar
         viewModelScope.launch {
             try {
-                val selectedId = sessionManager.getSelectedVehicleId()
                 val vehicles = sessionManager.getVehicles()
-                val vehicle = vehicles.firstOrNull { it.id == selectedId }
-
-                if (vehicle == null) {
+                if (vehicles.isEmpty()) {
                     _uiState.update {
                         it.copy(
-                            errorMessage = "No se encontró el vehículo seleccionado."
+                            vehicleId = null,
+                            plate = "",
+                            carName = "",
+                            year = "",
+                            brand = "",
+                            hologram = "E",
+                            errorMessage = null
                         )
                     }
                     return@launch
                 }
 
+                val selectedId = sessionManager.getSelectedVehicleId()
+                val vehicle = vehicles.firstOrNull { it.id == selectedId } ?: vehicles.first()
+
                 _uiState.update {
                     it.copy(
                         vehicleId = vehicle.id,
                         plate = vehicle.placa,
-                        carName = vehicle.nombre_vehiculo,      // adapta a tu modelo real
+                        carName = vehicle.nombre_vehiculo,
                         year = vehicle.anio?.toString() ?: "",
                         brand = vehicle.marca ?: "",
-                        hologram = mapHologramFromBackend(vehicle.holograma)
+                        hologram = mapHologramFromBackend(vehicle.holograma),
+                        errorMessage = null
                     )
                 }
 
             } catch (e: Exception) {
-                Log.e("EditVehicleVM", "Error cargando vehículo seleccionado", e)
+                Log.e("EditVehicleVM", "Error cargando vehículo", e)
                 _uiState.update {
-                    it.copy(
-                        errorMessage = "Error cargando vehículo seleccionado"
-                    )
+                    it.copy(errorMessage = "Error cargando vehículo")
                 }
             }
         }
     }
+
 
     // Si en BD guardas "Exento" pero en UI usas "E", mapeamos:
     private fun mapHologramFromBackend(holo: String?): String {
@@ -173,4 +180,95 @@ class EditVehicleViewModel @Inject constructor(
             selectedVehicleId = selectedId
         )
     }
+
+    // NUEVO: úsalo desde VerificacionScreen
+    fun updateHologramFromVerification(vehicleId: Int, hologramaUi: String) {
+        viewModelScope.launch {
+            try {
+                val currentList = sessionManager.getVehicles()
+                val currentVehicle = currentList.firstOrNull { it.id == vehicleId }
+                    ?: return@launch
+
+                val carName: String = currentVehicle.nombre_vehiculo
+                val brand: String = currentVehicle.marca ?: ""
+                val year: Int? = currentVehicle.anio
+
+                val hologramBackend: String = mapHologramToBackend(hologramaUi)
+
+                val result = editVehicleUseCase(
+                    vehicleId = vehicleId,
+                    carName = carName,
+                    year = year,
+                    brand = brand,
+                    hologram = hologramBackend
+                )
+
+                result.fold(
+                    onSuccess = { updatedVehicle ->
+                        updateSessionVehicle(updatedVehicle)
+                    },
+                    onFailure = { e ->
+                        Log.e("VerifVM", "Error actualizando holograma", e)
+                    }
+                )
+            } catch (e: Exception) {
+                Log.e("VerifVM", "Error de conexión", e)
+            }
+        }
+    }
+
+    fun onDeleteConfirm(vehicleId: Int) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isDeleting = true, errorMessage = null, vehicleDeleteSuccess = false) }
+
+            val result = deleteVehicleUseCase(vehicleId)
+
+            result.fold(
+                onSuccess = { resp ->
+                    removeVehicleFromSession(vehicleId)
+
+                    _uiState.update {
+                        it.copy(
+                            isDeleting = false,
+                            vehicleDeleteSuccess = true,
+                            deleteMessage = resp.message
+                        )
+                    }
+                },
+                onFailure = { e ->
+                    _uiState.update {
+                        it.copy(
+                            isDeleting = false,
+                            errorMessage = e.message ?: "Error al eliminar vehículo"
+                        )
+                    }
+                }
+            )
+        }
+    }
+
+    private suspend fun removeVehicleFromSession(vehicleId: Int) {
+        val currentList = sessionManager.getVehicles()
+        val newList = currentList.filterNot { it.id == vehicleId }
+
+        val userId = sessionManager.getUserId() ?: return
+        val email = sessionManager.getUserEmail() ?: return
+        val name = sessionManager.getUserName() ?: ""
+
+        val currentSelectedId = sessionManager.getSelectedVehicleId()
+
+        val newSelectedId =
+            if (currentSelectedId == vehicleId) newList.firstOrNull()?.id else currentSelectedId
+
+        sessionManager.saveSession(
+            userId = userId,
+            email = email,
+            name = name,
+            vehicles = newList,
+            selectedVehicleId = newSelectedId
+        )
+    }
+
+
+
 }
