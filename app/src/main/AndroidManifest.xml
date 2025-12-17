@@ -42,9 +42,11 @@
         <receiver
             android:name=".notifications.HoyNoCirculaReceiver"
             android:exported="false" />
-
         <receiver
             android:name=".notifications.VerificacionReceiver"
+            android:exported="false" />
+        <receiver
+            android:name=".notifications.TenenciaReceiver"
             android:exported="false" />
 
 

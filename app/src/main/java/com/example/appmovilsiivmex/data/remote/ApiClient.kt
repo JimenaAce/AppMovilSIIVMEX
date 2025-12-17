@@ -30,7 +30,7 @@ import org.json.JSONObject
 import java.util.concurrent.TimeUnit
 
 object ApiClient {
-    private const val BASE_URL = "https://62cadcd7329b.ngrok-free.app"
+    private const val BASE_URL = "https://04833d121a51.ngrok-free.app"
 
     private val client = OkHttpClient.Builder()
         .connectTimeout(30, TimeUnit.SECONDS)

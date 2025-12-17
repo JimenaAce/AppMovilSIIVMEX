@@ -69,6 +69,12 @@ class MyApplication : Application() {
                 "Te avisa cuando el vehículo tiene que verificar"
             )
 
+            // Canal para Tenencia
+            createHeadsUpChannel(
+                "canal_tenencia",
+                "Recordatorios tenencia",
+                "Te avisa del pago de tenencia"
+            )
 
         }
     }

@@ -1,10 +1,11 @@
 package com.example.appmovilsiivmex.notifications
 
+
 import android.app.PendingIntent
+import android.os.Build
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -12,11 +13,11 @@ import androidx.core.content.ContextCompat
 import com.example.appmovilsiivmex.MainActivity
 import com.example.appmovilsiivmex.R
 import com.example.appmovilsiivmex.data.local.SessionManager
-import com.example.appmovilsiivmex.ui.screens.calcularEstadoVerificacion
 import kotlinx.coroutines.runBlocking
 import java.time.LocalDate
+import java.time.temporal.ChronoUnit
 
-class VerificacionReceiver : BroadcastReceiver() {
+class TenenciaReceiver : BroadcastReceiver() {
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onReceive(context: Context, intent: Intent) {
@@ -25,22 +26,19 @@ class VerificacionReceiver : BroadcastReceiver() {
         if (vehicleId == -1) return
 
         val placa = intent.getStringExtra("placa") ?: return
-        val type = intent.getStringExtra("type") ?: "UNKNOWN"
+        val entidad = intent.getStringExtra("entidad") ?: "UNKNOWN"
+        intent.getStringExtra("type") ?: "UNKNOWN"
+        val year = intent.getIntExtra("year", LocalDate.now().year)
 
         val sessionManager = SessionManager(context)
-        val dateIso: String? = runBlocking {
-            sessionManager.getVehicleLastVerificationDate(vehicleId)
+
+        // Si el usuario ya marcó pagado, no notifiques
+        val pagada = runBlocking {
+            sessionManager.isTenenciaPagada(vehicleId, year)
         }
+        if (pagada) return
 
-        val ultimaVerificacion = dateIso?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
-        if (ultimaVerificacion == null) return
-
-        val estado = calcularEstadoVerificacion(
-            ultimaVerificacion = ultimaVerificacion,
-            placa = placa
-        )
-
-        // Permiso Android 13+
+        // Permiso Android
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             val hasPerm = ContextCompat.checkSelfPermission(
                 context,
@@ -49,14 +47,31 @@ class VerificacionReceiver : BroadcastReceiver() {
             if (!hasPerm) return
         }
 
-        val canalId = "canal_verificacion"
+        val limite = LocalDate.of(year, 3, 31)
+        val hoy = LocalDate.now()
+
+        val diasRestantes = ChronoUnit.DAYS.between(hoy, limite)
+
+        val canalId = "canal_tenencia"
         val iconRes = R.drawable.logo_app
 
-        val titulo =
-            if (estado.diasVencida != null) "Verificación vencida"
-            else "Recordatorio de verificación"
+        val titulo = when {
+            hoy.isAfter(limite) -> "Tenencia / Refrendo vencido"
+            diasRestantes == 0L -> "¡Hoy vence el refrendo!"
+            diasRestantes == 1L -> "Mañana vence el refrendo"
+            else -> "Recordatorio de refrendo"
+        }
 
-        val mensaje = "Placa $placa: ${estado.textoResumen}"
+        val mensaje = when {
+            hoy.isAfter(limite) ->
+                "Placa $placa: el plazo terminó el $limite. Podrían aplicar tenencia y recargos."
+            diasRestantes == 0L ->
+                "Placa $placa: hoy ($limite) es el último día para pagar el refrendo."
+            diasRestantes == 1L ->
+                "Placa $placa: mañana ($limite) es el último día para pagar el refrendo."
+            else ->
+                "Placa $placa: faltan $diasRestantes días para el límite ($limite)."
+        }
 
         val tapIntent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
@@ -69,6 +84,7 @@ class VerificacionReceiver : BroadcastReceiver() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
+
         val notif = NotificationCompat.Builder(context, canalId)
             .setSmallIcon(iconRes)
             .setContentTitle(titulo)
@@ -79,15 +95,16 @@ class VerificacionReceiver : BroadcastReceiver() {
             .setContentIntent(tapPending)
             .build()
 
-        val notifId = 9100 + (vehicleId % 1000)
+        val notifId = 9200 + (vehicleId % 1000)
         NotificationManagerCompat.from(context).notify(notifId, notif)
 
-        // Reprograma usando el dato real (si ya se volvió vencida, agenda diario)
-        VerificacionAlarmScheduler.scheduleVerificacionAlarms(
+        // Reprograma (como Verificación)
+        TenenciaAlarmScheduler.scheduleTenenciaAlarms(
             context = context,
             vehicleId = vehicleId,
             placa = placa,
-            ultimaVerificacion = ultimaVerificacion
+            entidadRegistro = entidad,
+            year = year
         )
     }
 }

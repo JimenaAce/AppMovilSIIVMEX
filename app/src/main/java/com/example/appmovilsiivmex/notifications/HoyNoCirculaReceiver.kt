@@ -1,6 +1,7 @@
 package com.example.appmovilsiivmex.notifications
 
 
+import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -9,6 +10,7 @@ import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
+import com.example.appmovilsiivmex.MainActivity
 import com.example.appmovilsiivmex.R
 import com.example.appmovilsiivmex.ui.screens.tieneRestriccionHoy
 
@@ -24,6 +26,17 @@ class HoyNoCirculaReceiver : BroadcastReceiver() {
         val restringido = tieneRestriccionHoy(
             placa = placa,
             hologramaDb = holograma
+        )
+
+        val tapIntent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+
+        }
+        val tapPending = PendingIntent.getActivity(
+            context,
+            0,
+            tapIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
         if (restringido) {
@@ -48,6 +61,7 @@ class HoyNoCirculaReceiver : BroadcastReceiver() {
                         .setStyle(NotificationCompat.BigTextStyle().bigText(mensaje))
                         .setPriority(NotificationCompat.PRIORITY_HIGH)
                         .setAutoCancel(true)
+                        .setContentIntent(tapPending)
                         .build()
 
                     NotificationManagerCompat.from(context).notify(9001, notif)
@@ -60,6 +74,7 @@ class HoyNoCirculaReceiver : BroadcastReceiver() {
                     .setStyle(NotificationCompat.BigTextStyle().bigText(mensaje))
                     .setPriority(NotificationCompat.PRIORITY_HIGH)
                     .setAutoCancel(true)
+                    .setContentIntent(tapPending)
                     .build()
 
                 NotificationManagerCompat.from(context).notify(9001, notif)

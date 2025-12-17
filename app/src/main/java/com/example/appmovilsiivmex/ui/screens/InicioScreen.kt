@@ -1,23 +1,27 @@
 package com.example.appmovilsiivmex.ui.screens
 
-import android.os.Build
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.os.Build
 import android.widget.NumberPicker
-import androidx.annotation.RequiresApi
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AttachMoney
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material3.*
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -27,11 +31,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.ui.viewinterop.AndroidView
 import com.example.appmovilsiivmex.data.local.SessionManager
 import com.example.appmovilsiivmex.navigation.AppHeader
 import com.example.appmovilsiivmex.navigation.LocalSelectedVehicleId
@@ -43,6 +45,112 @@ import com.example.appmovilsiivmex.ui.theme.ColorAzulOscuro
 import com.example.appmovilsiivmex.ui.theme.ColorFondoTarjeta
 import kotlinx.coroutines.launch
 import java.time.LocalDate
+import java.time.temporal.ChronoUnit
+import androidx.core.net.toUri
+import com.example.appmovilsiivmex.notifications.TenenciaAlarmScheduler
+
+
+@RequiresApi(Build.VERSION_CODES.O)
+private data class TenenciaUi(
+    val cardText: String,
+    val badgeText: String,
+    val badgeColor: Color,
+    val badgeTextColor: Color,
+    val dialogTitle: String,
+    val dialogMessage: String,
+    val iconTint: Color
+)
+
+@RequiresApi(Build.VERSION_CODES.O)
+private fun buildTenenciaUi(
+    yearActual: Int,
+    hoy: LocalDate,
+    pagada: Boolean
+): TenenciaUi {
+    val limite = LocalDate.of(yearActual, 3, 31)
+
+    val verde = Color(0xFF2E7D32)
+    val ambar = Color(0xFFFFA000)
+    val rojo = Color(0xFFE53935)
+
+    if (pagada) {
+        return TenenciaUi(
+            cardText = "Pagada ($yearActual)",
+            badgeText = "PAGADA",
+            badgeColor = Color(0xFFE8F5E9),
+            badgeTextColor = verde,
+            dialogTitle = "Tenencia / Refrendo",
+            dialogMessage = "Marcaste como pagado el refrendo de $yearActual.",
+            iconTint = verde
+        )
+    }
+
+    val diff = ChronoUnit.DAYS.between(hoy, limite) // >0 faltan, 0 hoy, <0 venció
+
+    return when {
+        diff > 0 -> {
+            val urgente = diff <= 15
+            TenenciaUi(
+                cardText = "Faltan $diff días",
+                badgeText = if (urgente) "URGENTE" else "VIGENTE",
+                badgeColor = if (urgente) Color(0xFFFFF3E0) else Color(0xFFE3F2FD),
+                badgeTextColor = if (urgente) Color(0xFFFF8F00) else Color(0xFF1565C0),
+                dialogTitle = "Tenencia / Refrendo",
+                dialogMessage =
+                    "Tu fecha límite para pagar el refrendo es el $limite.\n\n" +
+                            "Si pagas después, pueden aplicar tenencia y recargos.",
+                iconTint = if (urgente) ambar else verde
+            )
+        }
+
+        diff == 0L -> {
+            TenenciaUi(
+                cardText = "Vence hoy",
+                badgeText = "HOY",
+                badgeColor = Color(0xFFFFEBEE),
+                badgeTextColor = Color(0xFFC62828),
+                dialogTitle = "Tenencia / Refrendo",
+                dialogMessage = "Hoy ($limite) es el último día para pagar el refrendo y conservar el subsidio.",
+                iconTint = rojo
+            )
+        }
+
+        else -> {
+            val vencidaHace = -diff
+            TenenciaUi(
+                cardText = "Venció hace $vencidaHace días",
+                badgeText = "VENCIDA",
+                badgeColor = Color(0xFFFFEBEE),
+                badgeTextColor = Color(0xFFC62828),
+                dialogTitle = "Tenencia / Refrendo",
+                dialogMessage =
+                    "El plazo para conservar el subsidio venció el $limite.\n\n" +
+                            "Si no pagaste a tiempo, pueden aplicar tenencia y recargos.",
+                iconTint = rojo
+            )
+        }
+    }
+}
+
+@Composable
+private fun TenenciaBadge(text: String, bg: Color, fg: Color) {
+    Surface(
+        color = bg,
+        shape = RoundedCornerShape(999.dp)
+    ) {
+        Text(
+            text = text,
+            color = fg,
+            fontWeight = FontWeight.Bold,
+            fontSize = 12.sp,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+        )
+    }
+}
+
+// ============================
+// InicioScreen
+// ============================
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun InicioScreen(
@@ -72,7 +180,6 @@ fun InicioScreen(
 
     val estadoVerif = calcularEstadoVerificacion(ultimaVerificacion, placa)
 
-
     val verifIconTint = when {
         estadoVerif.diasVencida != null -> Color(0xFFD32F2F)   // rojo
         ultimaVerificacion == null      -> Color(0xFFFFA000)   // ámbar
@@ -91,6 +198,33 @@ fun InicioScreen(
             "Puedes circular sin restricciones"
         else ->
             "No circulas hoy"
+    }
+
+    // ============================
+    // TENENCIA / REFRENDO
+    // ============================
+    val yearActual = LocalDate.now().year
+    val hoy = LocalDate.now()
+
+    var mostrarDialogoTenencia by remember { mutableStateOf(false) }
+    var tenenciaPagada by remember { mutableStateOf(false) }
+    var tenenciaDismissed by remember { mutableStateOf(false) }
+
+    LaunchedEffect(selectedVehicle?.id, yearActual) {
+        val vId = selectedVehicle?.id ?: return@LaunchedEffect
+        tenenciaPagada = sessionManager.isTenenciaPagada(vId, yearActual)
+        tenenciaDismissed = sessionManager.isTenenciaAlertDismissed(vId, yearActual)
+    }
+
+    val tenenciaUi = remember(tenenciaPagada, yearActual, hoy) {
+        buildTenenciaUi(yearActual = yearActual, hoy = hoy, pagada = tenenciaPagada)
+    }
+
+    // Mostrar el alert para la tenencia desde el inicio
+    LaunchedEffect(selectedVehicle?.id, tenenciaPagada, tenenciaDismissed) {
+        if (selectedVehicle != null && !tenenciaPagada && !tenenciaDismissed) {
+            mostrarDialogoTenencia = true
+        }
     }
 
     // ============================
@@ -135,12 +269,19 @@ fun InicioScreen(
                 placa = placa,
                 ultimaVerificacion = ultimaVerificacion
             )
+
+            TenenciaAlarmScheduler.scheduleTenenciaAlarms(
+                context = context,
+                vehicleId = selectedVehicle.id,
+                placa = placa,
+                entidadRegistro = selectedVehicle.entidad_registro,
+                year = LocalDate.now().year
+            )
+
+
         }
     }
 
-    // ============================
-    // UI
-    // ============================
 
     Column(
         modifier = Modifier
@@ -190,7 +331,6 @@ fun InicioScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // HOY NO CIRCULA
                 InfoCard(
                     titulo = "Hoy no circula",
                     icono = {
@@ -208,16 +348,15 @@ fun InicioScreen(
                     onClick = { navController.navigate("hoy_no_circula") }
                 )
 
-                // VERIFICACIÓN
                 InfoCard(
                     titulo = "Verificación",
                     icono = {
-                            Icon(
-                                imageVector = Icons.Default.CalendarMonth,
-                                contentDescription = "Estado de verificación",
-                                tint = verifIconTint,
-                                modifier = Modifier.size(50.dp)
-                            )
+                        Icon(
+                            imageVector = Icons.Default.CalendarMonth,
+                            contentDescription = "Estado de verificación",
+                            tint = verifIconTint,
+                            modifier = Modifier.size(50.dp)
+                        )
                     },
                     descripcion = estadoVerif.textoResumen,
                     badgeTexto = null,
@@ -246,14 +385,15 @@ fun InicioScreen(
                         Icon(
                             imageVector = Icons.Default.AttachMoney,
                             contentDescription = "Tenencia",
-                            tint = ColorAzulOscuro,
+                            tint = tenenciaUi.iconTint,
                             modifier = Modifier.size(60.dp)
                         )
                     },
-                    descripcion = "Todo al corriente",
-                    badgeTexto = null,
-                    badgeColor = null,
-                    modifier = Modifier.weight(1f)
+                    descripcion = tenenciaUi.cardText,
+                    badgeTexto = tenenciaUi.badgeText,
+                    badgeColor = tenenciaUi.badgeColor,
+                    modifier = Modifier.weight(1f),
+                    onClick = { mostrarDialogoTenencia = true }
                 )
 
                 InfoCard(
@@ -270,9 +410,7 @@ fun InicioScreen(
                     badgeTexto = null,
                     badgeColor = null,
                     modifier = Modifier.weight(1f),
-                    onClick = {
-                            navController.navigate("multas")
-                    }
+                    onClick = { navController.navigate("multas") }
                 )
             }
         }
@@ -281,7 +419,7 @@ fun InicioScreen(
     }
 
     // ============================
-    // Diálogo selección Mes / Año
+    // Diálogo selección Mes / Año (Verificación)
     // ============================
     if (mostrarDialogoVerif && selectedVehicle != null) {
         DialogSeleccionMesAnio(
@@ -290,7 +428,6 @@ fun InicioScreen(
                 val date = LocalDate.of(year, month, 1)
                 mostrarDialogoVerif = false
 
-                // 🔹 guardar en DataStore ligado al vehículo
                 scope.launch {
                     sessionManager.saveVehicleLastVerificationDate(
                         vehicleId = selectedVehicle.id,
@@ -298,8 +435,112 @@ fun InicioScreen(
                     )
                 }
 
-                // y navegas a la pantalla de detalle
                 navController.navigate("verificacion")
+            }
+        )
+    }
+
+    // ============================
+    // AlertDialog Tenencia
+    // ============================
+    if (mostrarDialogoTenencia && selectedVehicle != null) {
+
+        val urlPortal = when (selectedVehicle.entidad_registro.trim().uppercase()) {
+            "EDOMEX", "ESTADO DE MÉXICO", "ESTADO DE MEXICO" ->
+                "https://edomex.gob.mx/PagoDeTenencia2025"
+            else ->
+                "https://data.finanzas.cdmx.gob.mx/formato_lc/vehicular/40_5"
+        }
+
+        AlertDialog(
+            onDismissRequest = { mostrarDialogoTenencia = false },
+            shape = RoundedCornerShape(18.dp),
+            title = {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Surface(
+                        color = tenenciaUi.iconTint.copy(alpha = 0.12f),
+                        shape = RoundedCornerShape(14.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.AttachMoney,
+                            contentDescription = null,
+                            tint = tenenciaUi.iconTint,
+                            modifier = Modifier.padding(10.dp).size(22.dp)
+                        )
+                    }
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = tenenciaUi.dialogTitle,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 18.sp
+                        )
+                        Spacer(Modifier.height(6.dp))
+                        TenenciaBadge(
+                            text = tenenciaUi.badgeText,
+                            bg = tenenciaUi.badgeColor,
+                            fg = tenenciaUi.badgeTextColor
+                        )
+                    }
+                }
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(
+                        text = tenenciaUi.dialogMessage,
+                        fontSize = 14.sp,
+                        color = Color(0xFF4A4A4A),
+                        lineHeight = 18.sp
+                    )
+
+                    HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
+
+                    Text(
+                        text = if (tenenciaPagada)
+                            "Si fue un error, puedes dejarlo como pendiente."
+                        else
+                            "¿Ya pagaste el refrendo de este año?",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        scope.launch {
+                            sessionManager.setTenenciaPagada(selectedVehicle.id, yearActual, true)
+                            sessionManager.setTenenciaAlertDismissed(selectedVehicle.id, yearActual, true)
+                        }
+                        tenenciaPagada = true
+                        mostrarDialogoTenencia = false
+                    }
+                ) {
+                    Text("Sí, ya pagué")
+                }
+            },
+            dismissButton = {
+                Row {
+                    TextButton(onClick = {
+                        val intent = Intent(Intent.ACTION_VIEW, urlPortal.toUri())
+                        context.startActivity(intent)
+                    }) {
+                        Text("Ir al portal")
+                    }
+
+                    TextButton(onClick = {
+                        scope.launch {
+                            sessionManager.setTenenciaAlertDismissed(selectedVehicle.id, yearActual, true)
+                        }
+                        tenenciaDismissed = true
+                        mostrarDialogoTenencia = false
+                    }) {
+                        Text("Ahora no")
+                    }
+                }
             }
         )
     }
@@ -361,17 +602,14 @@ private fun InfoCard(
             if (badgeTexto != null && badgeColor != null) {
                 Surface(
                     color = badgeColor,
-                    shape = RoundedCornerShape(8.dp)
+                    shape = RoundedCornerShape(999.dp)
                 ) {
                     Text(
                         text = badgeTexto,
                         color = Color.Black,
-                        fontSize = 13.sp,
+                        fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(
-                            horizontal = 10.dp,
-                            vertical = 4.dp
-                        ),
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
                         textAlign = TextAlign.Center
                     )
                 }
@@ -406,7 +644,6 @@ fun DialogSeleccionMesAnio(
     var mesIndex by remember { mutableIntStateOf(LocalDate.now().monthValue - 1) }
 
     val currentYear = LocalDate.now().year
-    // 🔹 rango más amplio de años
     val years = (currentYear - 5..currentYear + 10).toList()
     var yearIndex by remember { mutableIntStateOf(years.indexOf(currentYear)) }
 
@@ -455,9 +692,7 @@ fun DialogSeleccionMesAnio(
             }
         },
         confirmButton = {
-            TextButton(onClick = {
-                onConfirm(years[yearIndex], mesIndex + 1)
-            }) {
+            TextButton(onClick = { onConfirm(years[yearIndex], mesIndex + 1) }) {
                 Text("Guardar")
             }
         },
@@ -468,7 +703,6 @@ fun DialogSeleccionMesAnio(
         }
     )
 }
-
 
 @Composable
 private fun InlineWheelPicker(
@@ -494,7 +728,7 @@ private fun InlineWheelPicker(
             Box(
                 modifier = Modifier
                     .width(90.dp)
-                    .height(160.dp), // alto del wheel
+                    .height(160.dp),
                 contentAlignment = Alignment.Center
             ) {
                 AndroidView(
@@ -507,8 +741,7 @@ private fun InlineWheelPicker(
                             value = selectedIndex.coerceIn(0, maxValue)
 
                             wrapSelectorWheel = true
-                            descendantFocusability =
-                                NumberPicker.FOCUS_BLOCK_DESCENDANTS
+                            descendantFocusability = NumberPicker.FOCUS_BLOCK_DESCENDANTS
 
                             setOnValueChangedListener { _, _, newVal ->
                                 onSelectedChange(newVal)
@@ -516,14 +749,8 @@ private fun InlineWheelPicker(
                         }
                     },
                     update = { picker ->
-                        // Mantener sincronizado cuando cambias selectedIndex desde fuera
-                        val clamped = selectedIndex.coerceIn(
-                            picker.minValue,
-                            picker.maxValue
-                        )
-                        if (picker.value != clamped) {
-                            picker.value = clamped
-                        }
+                        val clamped = selectedIndex.coerceIn(picker.minValue, picker.maxValue)
+                        if (picker.value != clamped) picker.value = clamped
                         if (picker.displayedValues?.size != items.size) {
                             picker.displayedValues = items.toTypedArray()
                         }
@@ -533,5 +760,3 @@ private fun InlineWheelPicker(
         }
     }
 }
-
-

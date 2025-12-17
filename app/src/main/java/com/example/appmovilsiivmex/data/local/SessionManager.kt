@@ -222,6 +222,37 @@ class SessionManager(private val context: Context) {
     }
 
     // ─────────────────────────────────────────────
+    // TENENCIA / REFRENDO (por vehículo y año)
+    // ─────────────────────────────────────────────
+    private fun tenenciaPagadaKey(vehicleId: Int, year: Int) =
+        booleanPreferencesKey("tenencia_pagada_${vehicleId}_$year")
+
+    private fun tenenciaDismissKey(vehicleId: Int, year: Int) =
+        booleanPreferencesKey("tenencia_alert_dismissed_${vehicleId}_$year")
+
+    suspend fun setTenenciaPagada(vehicleId: Int, year: Int, pagada: Boolean) {
+        context.dataStore.edit { prefs ->
+            prefs[tenenciaPagadaKey(vehicleId, year)] = pagada
+        }
+    }
+
+    suspend fun isTenenciaPagada(vehicleId: Int, year: Int): Boolean {
+        val prefs = context.dataStore.data.first()
+        return prefs[tenenciaPagadaKey(vehicleId, year)] ?: false
+    }
+
+    suspend fun setTenenciaAlertDismissed(vehicleId: Int, year: Int, dismissed: Boolean) {
+        context.dataStore.edit { prefs ->
+            prefs[tenenciaDismissKey(vehicleId, year)] = dismissed
+        }
+    }
+
+    suspend fun isTenenciaAlertDismissed(vehicleId: Int, year: Int): Boolean {
+        val prefs = context.dataStore.data.first()
+        return prefs[tenenciaDismissKey(vehicleId, year)] ?: false
+    }
+
+    // ─────────────────────────────────────────────
     // CERRAR SESIÓN
     // ─────────────────────────────────────────────
     suspend fun clearSession() {
